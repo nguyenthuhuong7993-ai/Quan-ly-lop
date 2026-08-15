@@ -2494,12 +2494,35 @@ function renderCompetition(){
 
 function renderAttendance(){
 
+    function renderAttendance(){
+
     const tbody =
         $("attendanceBody");
 
     const date =
         $("attendanceDate").value;
 
+    const students =
+        getStudents();
+
+    /*
+       Nếu chưa có học sinh
+    */
+    if(students.length === 0){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6" class="empty-row">
+                    Chưa có học sinh.
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+    /*
+       Lấy dữ liệu điểm danh của lớp hiện tại
+    */
     let rows =
         DATA.diemdanh.filter(
             row =>
@@ -2509,88 +2532,20 @@ function renderAttendance(){
                 )
         );
 
+    /*
+       Nếu người dùng chọn ngày
+       thì CHỈ lấy dữ liệu của đúng ngày đó.
+    */
     if(date){
 
-        const selected =
+        const selectedDate =
             normalizeDate(date);
 
-        const filtered =
+        rows =
             rows.filter(row => {
 
-                const d =
-                    normalizeDate(
-                        getValue(row,[
-                            "Ngay",
-                            "Ngày",
-                            "Date",
-                            "Ngay diem danh",
-                            "Ngày điểm danh"
-                        ])
-                    );
-
-                return !d || d === selected;
-            });
-
-        if(filtered.length > 0){
-            rows = filtered;
-        }
-    }
-
-    const students =
-        getStudents();
-
-    if(rows.length === 0){
-
-        if(students.length === 0){
-
-            tbody.innerHTML =
-                `<tr>
-                    <td colspan="6" class="empty-row">
-                        Chưa có học sinh.
-                    </td>
-                </tr>`;
-
-            return;
-        }
-
-        rows =
-            students.map(student => ({
-                "__student":
-                    student
-            }));
-    }
-
-    tbody.innerHTML =
-        rows.map(
-            (row,index) => {
-
-                const student =
-                    row.__student;
-
-                const id =
-                    student
-                    ? getStudentId(student)
-                    : getStudentId(row);
-
-                const name =
-                    student
-                    ? getStudentName(student)
-                    : getStudentName(row);
-
-                const status =
-                    student
-                    ? "Chưa xác định"
-                    : getValue(row,[
-                        "TrangThai",
-                        "Trạng thái",
-                        "Trang thai",
-                        "Status"
-                    ]) || "Chưa xác định";
-
-                const day =
-                    student
-                    ? date
-                    : getValue(row,[
+                const rawDate =
+                    getValue(row,[
                         "Ngay",
                         "Ngày",
                         "Date",
@@ -2598,20 +2553,100 @@ function renderAttendance(){
                         "Ngày điểm danh"
                     ]);
 
+                const rowDate =
+                    normalizeDate(rawDate);
+
+                return rowDate === selectedDate;
+            });
+    }
+
+    /*
+       Lập bảng tra cứu:
+       Mã học sinh → dòng điểm danh
+    */
+    const rowsByStudent = {};
+
+    rows.forEach(row => {
+
+        const id =
+            getStudentId(row);
+
+        if(id){
+
+            rowsByStudent[
+                normalize(id)
+            ] = row;
+
+        }
+
+    });
+
+    /*
+       Hiển thị toàn bộ học sinh.
+       Nếu ngày đó chưa có dữ liệu
+       thì hiển thị "Chưa điểm danh".
+    */
+    tbody.innerHTML =
+        students.map(
+            (student,index) => {
+
+                const id =
+                    getStudentId(student);
+
+                const name =
+                    getStudentName(student);
+
+                const record =
+                    rowsByStudent[
+                        normalize(id)
+                    ];
+
+                const status =
+                    record
+                    ? getValue(
+                        record,
+                        [
+                            "TrangThai",
+                            "Trạng thái",
+                            "Trang thai",
+                            "Status"
+                        ]
+                    ) || "Chưa xác định"
+                    : "Chưa điểm danh";
+
+                const day =
+                    record
+                    ? getValue(
+                        record,
+                        [
+                            "Ngay",
+                            "Ngày",
+                            "Date",
+                            "Ngay diem danh",
+                            "Ngày điểm danh"
+                        ]
+                    )
+                    : date;
+
                 const note =
-                    student
-                    ? "—"
-                    : getValue(row,[
-                        "GhiChu",
-                        "Ghi chú",
-                        "Ghi chu",
-                        "Note"
-                    ]) || "—";
+                    record
+                    ? getValue(
+                        record,
+                        [
+                            "GhiChu",
+                            "Ghi chú",
+                            "Ghi chu",
+                            "Note"
+                        ]
+                    ) || "—"
+                    : "—";
 
                 return `
                 <tr>
 
-                    <td>${index+1}</td>
+                    <td>
+                        ${index + 1}
+                    </td>
 
                     <td>
                         ${escapeHtml(id || "—")}
@@ -2622,7 +2657,13 @@ function renderAttendance(){
                     </td>
 
                     <td>
-                        ${statusBadge(status)}
+                        ${
+                            record
+                            ? statusBadge(status)
+                            : `<span class="badge badge-orange">
+                                Chưa điểm danh
+                              </span>`
+                        }
                     </td>
 
                     <td>
@@ -2637,6 +2678,7 @@ function renderAttendance(){
 
                 </tr>
                 `;
+
             }
         ).join("");
 }

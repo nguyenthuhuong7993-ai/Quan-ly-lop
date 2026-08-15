@@ -2,9 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Trợ lý AI – Quản lý lớp học</title>
 
@@ -16,348 +14,249 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background: #f1f5f9;
+            background: #f3f6fb;
             color: #172033;
         }
 
-        /* =========================
-           HEADER
-        ========================= */
-
         .header {
-            background: linear-gradient(135deg, #3f51d8, #485be6);
+            background: linear-gradient(135deg, #4055d8, #3153e8);
             color: white;
-            padding: 28px 36px;
+            padding: 28px 35px;
         }
 
         .header h1 {
-            margin: 0 0 10px;
+            margin: 0;
             font-size: 30px;
         }
 
         .header p {
-            margin: 0;
-            font-size: 20px;
-            line-height: 1.4;
-            opacity: .95;
+            margin: 10px 0 0;
+            font-size: 18px;
+            font-weight: 500;
         }
-
-        /* =========================
-           CONTAINER
-        ========================= */
 
         .container {
             max-width: 1200px;
-            margin: 25px auto;
-            padding: 0 20px;
+            margin: 0 auto;
+            padding: 25px;
         }
 
-        /* =========================
-           CARD
-        ========================= */
+        .error-box {
+            display: none;
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
 
-        .card {
+        .control-card {
             background: white;
-            border-radius: 18px;
-            padding: 24px;
-            margin-bottom: 22px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.08);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,.07);
+            margin-bottom: 20px;
         }
 
-        .card h2 {
-            margin-top: 0;
-            margin-bottom: 18px;
-            font-size: 23px;
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
         }
 
-        /* =========================
-           FORM
-        ========================= */
-
-        label {
+        .form-group label {
             display: block;
-            font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
             margin-bottom: 8px;
         }
 
         select,
         input {
             width: 100%;
-            padding: 16px;
-            border: 1px solid #cbd5e1;
+            height: 48px;
+            border: 1px solid #ccd4e0;
             border-radius: 12px;
-            font-size: 18px;
-            outline: none;
+            padding: 0 15px;
+            font-size: 16px;
             background: white;
+            outline: none;
         }
 
         select:focus,
         input:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+            border-color: #4055d8;
+            box-shadow: 0 0 0 3px rgba(64,85,216,.12);
         }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        /* =========================
-           BUTTON
-        ========================= */
 
         button {
-            border: 0;
+            border: none;
             border-radius: 12px;
-            padding: 15px 20px;
-            font-size: 17px;
-            font-weight: bold;
+            height: 48px;
+            padding: 0 22px;
+            background: #65758f;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
-            transition: .2s;
         }
 
         button:hover {
-            transform: translateY(-1px);
-            opacity: .92;
+            opacity: .9;
         }
-
-        .btn-primary {
-            width: 100%;
-            background: #64748b;
-            color: white;
-        }
-
-        .btn-blue {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-green {
-            background: #16a34a;
-            color: white;
-        }
-
-        .btn-red {
-            background: #dc2626;
-            color: white;
-        }
-
-        /* =========================
-           MESSAGE
-        ========================= */
-
-        .message {
-            padding: 15px 18px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-            font-size: 17px;
-        }
-
-        .message.error {
-            display: block;
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .message.success {
-            display: block;
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .message.loading {
-            display: block;
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        /* =========================
-           STATISTICS
-        ========================= */
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .stat {
+        .stat-card {
             background: white;
             border-radius: 18px;
-            padding: 24px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.07);
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.06);
         }
 
         .stat-title {
-            font-size: 18px;
-            color: #64748b;
-            margin-bottom: 12px;
+            color: #61708a;
+            font-size: 16px;
+            margin-bottom: 10px;
         }
 
         .stat-number {
-            font-size: 40px;
-            font-weight: bold;
-            color: #111827;
+            font-size: 34px;
+            font-weight: 800;
         }
 
-        /* =========================
-           TABLE
-        ========================= */
+        .section {
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.06);
+        }
+
+        .section h2 {
+            font-size: 19px;
+            margin: 0 0 15px;
+        }
 
         .table-wrapper {
+            width: 100%;
             overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 600px;
         }
 
         th {
-            background: #eef2ff;
-            color: #3730a3;
-            padding: 13px;
+            background: #eef1ff;
+            color: #24388f;
+            padding: 11px;
             text-align: left;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         td {
-            padding: 13px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 10px;
+            border-bottom: 1px solid #e7ebf2;
+            font-size: 14px;
         }
 
         tr:hover td {
-            background: #f8fafc;
+            background: #f8faff;
         }
 
-        /* =========================
-           BADGE
-        ========================= */
+        .empty {
+            text-align: center;
+            padding: 25px;
+            color: #78859a;
+        }
 
         .badge {
             display: inline-block;
-            padding: 6px 10px;
+            padding: 5px 10px;
             border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .badge-present {
             background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-absent {
-            background: #fee2e2;
-            color: #991b1b;
+            color: #15803d;
         }
 
         .badge-late {
             background: #fef3c7;
-            color: #92400e;
+            color: #b45309;
         }
 
-        /* =========================
-           STUDENT SEARCH
-        ========================= */
-
-        .student-result {
-            margin-top: 15px;
+        .badge-absent {
+            background: #fee2e2;
+            color: #b91c1c;
         }
 
-        .student-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 12px;
-            cursor: pointer;
+        .badge-unknown {
+            background: #e5e7eb;
+            color: #4b5563;
         }
 
-        .student-card:hover {
-            background: #f8fafc;
+        .loading {
+            color: #4055d8;
+            font-weight: 700;
         }
 
-        .student-name {
-            font-size: 19px;
-            font-weight: bold;
-        }
-
-        .student-code {
-            color: #64748b;
-            margin-top: 5px;
-        }
-
-        /* =========================
-           CAMERA
-        ========================= */
-
-        .camera-box {
-            display: none;
+        .footer {
             text-align: center;
+            color: #7b8798;
+            font-size: 13px;
+            padding: 20px;
         }
-
-        #camera {
-            width: 100%;
-            max-width: 640px;
-            border-radius: 15px;
-            background: #111827;
-        }
-
-        .camera-buttons {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* =========================
-           FOOTER
-        ========================= */
-
-        footer {
-            text-align: center;
-            color: #64748b;
-            padding: 30px;
-        }
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
 
         @media (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
 
             .stats {
                 grid-template-columns: repeat(2, 1fr);
             }
-
-            .header h1 {
-                font-size: 25px;
-            }
-
-            .header p {
-                font-size: 17px;
-            }
         }
 
         @media (max-width: 600px) {
-
-            .stats {
-                grid-template-columns: 1fr;
+            .header {
+                padding: 22px 18px;
             }
 
-            .header {
-                padding: 22px;
+            .header h1 {
+                font-size: 23px;
+            }
+
+            .header p {
+                font-size: 15px;
             }
 
             .container {
-                padding: 0 12px;
+                padding: 15px;
             }
 
-            .card {
-                padding: 18px;
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-number {
+                font-size: 28px;
             }
         }
     </style>
@@ -365,364 +264,135 @@
 
 <body>
 
-<!-- =========================
-     HEADER
-========================= -->
-
 <header class="header">
-
     <h1>🤖 Trợ lý AI – Quản lý lớp học</h1>
-
-    <p>
-        Quản lý học sinh • Điểm số • Thi đua • Điểm danh • Camera
-    </p>
-
+    <p>Quản lý học sinh • Điểm số • Thi đua • Điểm danh • Camera</p>
 </header>
-
-
-<!-- =========================
-     MAIN
-========================= -->
 
 <main class="container">
 
-    <!-- THÔNG BÁO -->
+    <div id="errorBox" class="error-box"></div>
 
-    <div id="message" class="message"></div>
+    <!-- BỘ ĐIỀU KHIỂN -->
+    <section class="control-card">
 
+        <div class="form-grid">
 
-    <!-- CHỌN LỚP -->
+            <div class="form-group">
+                <label for="classSelect">Lớp</label>
+                <select id="classSelect">
+                    <option value="">Đang tải lớp...</option>
+                </select>
+            </div>
 
-    <section class="card">
+            <div class="form-group">
+                <label for="studentSearch">Tìm học sinh</label>
+                <input
+                    id="studentSearch"
+                    type="text"
+                    placeholder="Nhập mã HS hoặc họ tên..."
+                >
+            </div>
 
-        <h2>Quản lý lớp học</h2>
+            <div class="form-group">
+                <label for="attendanceDate">Ngày điểm danh</label>
+                <input
+                    id="attendanceDate"
+                    type="date"
+                >
+            </div>
 
-        <div class="form-group">
-
-            <label for="classSelect">
-                Lớp
-            </label>
-
-            <select id="classSelect">
-
-                <option value="">
-                    Đang tải lớp...
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label for="studentSearch">
-                Tìm học sinh
-            </label>
-
-            <input
-                id="studentSearch"
-                type="text"
-                placeholder="Nhập mã HS hoặc họ tên..."
-            >
+            <button id="reloadButton">
+                🔄 Tải lại
+            </button>
 
         </div>
-
-
-        <div class="form-group">
-
-            <label for="attendanceDate">
-                Ngày điểm danh
-            </label>
-
-            <input
-                id="attendanceDate"
-                type="date"
-            >
-
-        </div>
-
-
-        <button
-            id="reloadButton"
-            class="btn-primary"
-            type="button"
-        >
-            🔄 Tải lại
-        </button>
 
     </section>
 
 
     <!-- THỐNG KÊ -->
-
     <section class="stats">
 
-        <div class="stat">
-
-            <div class="stat-title">
-                Sĩ số
-            </div>
-
-            <div
-                id="totalStudents"
-                class="stat-number"
-            >
-                0
-            </div>
-
+        <div class="stat-card">
+            <div class="stat-title">Sĩ số</div>
+            <div id="totalStudents" class="stat-number">0</div>
         </div>
 
-
-        <div class="stat">
-
-            <div class="stat-title">
-                Có mặt
-            </div>
-
-            <div
-                id="presentStudents"
-                class="stat-number"
-            >
-                0
-            </div>
-
+        <div class="stat-card">
+            <div class="stat-title">Có mặt</div>
+            <div id="presentCount" class="stat-number">0</div>
         </div>
 
-
-        <div class="stat">
-
-            <div class="stat-title">
-                Đi muộn
-            </div>
-
-            <div
-                id="lateStudents"
-                class="stat-number"
-            >
-                0
-            </div>
-
+        <div class="stat-card">
+            <div class="stat-title">Đi muộn</div>
+            <div id="lateCount" class="stat-number">0</div>
         </div>
 
+        <div class="stat-card">
+            <div class="stat-title">Vắng</div>
+            <div id="absentCount" class="stat-number">0</div>
+        </div>
 
-        <div class="stat">
-
-            <div class="stat-title">
-                Vắng
-            </div>
-
-            <div
-                id="absentStudents"
-                class="stat-number"
-            >
-                0
-            </div>
-
+        <div class="stat-card">
+            <div class="stat-title">Cần xác nhận</div>
+            <div id="unknownCount" class="stat-number">0</div>
         </div>
 
     </section>
 
 
-    <!-- TÌM HỌC SINH -->
+    <!-- DANH SÁCH HỌC SINH -->
+    <section class="section">
 
-    <section class="card">
+        <h2>👨‍🎓 Danh sách học sinh</h2>
 
-        <h2>
-            👨‍🎓 Danh sách học sinh
-        </h2>
-
-        <div
-            id="studentResults"
-            class="student-result"
-        >
-
-            <p>
-                Chọn lớp để xem danh sách học sinh.
-            </p>
-
+        <div id="studentTable" class="table-wrapper">
+            <div class="empty">Đang tải dữ liệu...</div>
         </div>
 
     </section>
 
 
-    <!-- ĐIỂM -->
+    <!-- ĐIỂM SỐ -->
+    <section class="section">
 
-    <section class="card">
+        <h2>📊 Điểm số</h2>
 
-        <h2>
-            📊 Điểm số
-        </h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>STT</th>
-                        <th>Mã HS</th>
-                        <th>Họ và tên</th>
-                        <th>Môn</th>
-                        <th>Điểm</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="scoreTable">
-
-                    <tr>
-                        <td colspan="5">
-                            Chưa có dữ liệu
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
+        <div id="scoreTable" class="table-wrapper">
+            <div class="empty">Đang tải dữ liệu...</div>
         </div>
 
     </section>
 
 
     <!-- THI ĐUA -->
+    <section class="section">
 
-    <section class="card">
+        <h2>🏆 Thi đua</h2>
 
-        <h2>
-            🏆 Thi đua
-        </h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>STT</th>
-                        <th>Lớp</th>
-                        <th>Điểm thi đua</th>
-                        <th>Xếp hạng</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="competitionTable">
-
-                    <tr>
-                        <td colspan="4">
-                            Chưa có dữ liệu
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
+        <div id="competitionTable" class="table-wrapper">
+            <div class="empty">Đang tải dữ liệu...</div>
         </div>
 
     </section>
 
 
     <!-- ĐIỂM DANH -->
+    <section class="section">
 
-    <section class="card">
+        <h2>📅 Điểm danh</h2>
 
-        <h2>
-            📅 Điểm danh
-        </h2>
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>STT</th>
-                        <th>Mã HS</th>
-                        <th>Họ tên</th>
-                        <th>Trạng thái</th>
-                        <th>Ngày</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="attendanceTable">
-
-                    <tr>
-                        <td colspan="5">
-                            Chưa có dữ liệu
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
+        <div id="attendanceTable" class="table-wrapper">
+            <div class="empty">Đang tải dữ liệu...</div>
         </div>
-
-    </section>
-
-
-    <!-- CAMERA -->
-
-    <section class="card">
-
-        <h2>
-            📷 Camera điểm danh
-        </h2>
-
-        <div class="camera-box" id="cameraBox">
-
-            <video
-                id="camera"
-                autoplay
-                playsinline
-            ></video>
-
-            <div class="camera-buttons">
-
-                <button
-                    id="startCamera"
-                    class="btn-blue"
-                    type="button"
-                >
-                    📷 Mở camera
-                </button>
-
-                <button
-                    id="stopCamera"
-                    class="btn-red"
-                    type="button"
-                >
-                    ⛔ Tắt camera
-                </button>
-
-            </div>
-
-        </div>
-
-        <button
-            id="showCamera"
-            class="btn-blue"
-            type="button"
-        >
-            📷 Mở chức năng camera
-        </button>
 
     </section>
 
 </main>
 
-
-<footer>
-
+<footer class="footer">
     Trợ lý AI – Quản lý lớp học
-
 </footer>
 
 

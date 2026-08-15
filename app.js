@@ -3,7 +3,7 @@
 // ==========================================
 
 const API_URL =
-    "DÁN_WEB_APP_URL_CỦA_BẠN_VÀO_ĐÂY";
+    "https://script.google.com/macros/s/AKfycbzXfW5EFKL3mKljkjEfFfhxPf2BrnaKJ_rNvUPSkQ8vA0XvnWwzu9buP4UsUiE81b2T/exec";
 
 
 // ==========================================

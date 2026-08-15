@@ -1,3 +1,4 @@
+```javascript
 // ==========================================
 // CẤU HÌNH API
 // ==========================================
@@ -7,7 +8,7 @@ const API_URL =
 
 
 // ==========================================
-// BIẾN DỮ LIỆU
+// DỮ LIỆU
 // ==========================================
 
 let classes = [];
@@ -20,117 +21,209 @@ let students = [];
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    loadClasses();
+    console.log("APP.JS ĐÃ ĐƯỢC TẢI");
 
-    document
-        .getElementById("classSelect")
-        .addEventListener("change", function () {
+    const classSelect =
+        document.getElementById("classSelect");
 
-            const classId = this.value;
-
-            displayStudents(classId);
-
-        });
+    const searchInput =
+        document.getElementById("searchInput");
 
 
-    document
-        .getElementById("searchInput")
-        .addEventListener("input", function () {
+    // Khi chọn lớp
+    classSelect.addEventListener("change", function () {
 
-            const classId =
-                document.getElementById("classSelect").value;
+        console.log("ĐÃ CHỌN LỚP:", this.value);
 
-            displayStudents(classId);
+        displayStudents(this.value);
 
-        });
+    });
+
+
+    // Khi tìm kiếm học sinh
+    searchInput.addEventListener("input", function () {
+
+        const classId =
+            classSelect.value;
+
+        displayStudents(classId);
+
+    });
+
+
+    // Tải dữ liệu
+    loadData();
 
 });
 
 
 // ==========================================
-// LẤY DANH SÁCH LỚP
+// TẢI TOÀN BỘ DỮ LIỆU
 // ==========================================
 
-async function loadClasses() {
+async function loadData() {
 
     try {
 
         showLoading(true);
 
-        const response = await fetch(
-            API_URL + "?action=getClasses"
+        console.log("Đang tải danh sách lớp...");
+
+
+        // -------------------------------
+        // LẤY DANH SÁCH LỚP
+        // -------------------------------
+
+        const classResponse =
+            await fetch(
+                API_URL + "?action=getClasses"
+            );
+
+        const classResult =
+            await classResponse.json();
+
+
+        console.log(
+            "Dữ liệu lớp:",
+            classResult
         );
 
-        const result = await response.json();
 
-        if (!result.success) {
+        if (!classResult.success) {
 
-            throw new Error(result.error);
+            throw new Error(
+                classResult.error ||
+                "Không lấy được danh sách lớp"
+            );
 
         }
 
-        classes = result.data || [];
+
+        classes =
+            classResult.data || [];
+
+
+        console.log(
+            "Số lớp:",
+            classes.length
+        );
+
 
         renderClasses();
 
+
         document.getElementById("classCount")
-            .textContent = classes.length;
+            .textContent =
+            classes.length;
 
-        await loadStudents();
-/ Hiển thị học sinh của lớp đang được chọn
-const currentClass =
-    document.getElementById("classSelect").value;
 
-displayStudents(currentClass);
-        showLoading(false);
+        // -------------------------------
+        // LẤY DANH SÁCH HỌC SINH
+        // -------------------------------
 
-    } catch (error) {
-
-        console.error(error);
-
-        showMessage(
-            "Không thể tải danh sách lớp."
+        console.log(
+            "Đang tải danh sách học sinh..."
         );
 
-        showLoading(false);
-    }
-}
+
+        const studentResponse =
+            await fetch(
+                API_URL + "?action=getStudents"
+            );
 
 
-// ==========================================
-// LẤY DANH SÁCH HỌC SINH
-// ==========================================
+        const studentResult =
+            await studentResponse.json();
 
-async function loadStudents() {
 
-    try {
-
-        const response = await fetch(
-            API_URL + "?action=getStudents"
+        console.log(
+            "Dữ liệu học sinh:",
+            studentResult
         );
 
-        const result = await response.json();
 
-        if (!result.success) {
+        if (!studentResult.success) {
 
-            throw new Error(result.error);
+            throw new Error(
+                studentResult.error ||
+                "Không lấy được danh sách học sinh"
+            );
 
         }
 
-        students = result.data || [];
+
+        students =
+            studentResult.data || [];
+
+
+        console.log(
+            "Số học sinh:",
+            students.length
+        );
+
 
         document.getElementById("studentCount")
-            .textContent = students.length;
+            .textContent =
+            students.length;
+
+
+        // -------------------------------
+        // HIỂN THỊ LỚP ĐẦU TIÊN
+        // -------------------------------
+
+        if (classes.length > 0) {
+
+            const firstClass =
+                String(
+                    classes[0].MaLop || ""
+                ).trim();
+
+
+            console.log(
+                "Lớp đầu tiên:",
+                firstClass
+            );
+
+
+            document.getElementById(
+                "classSelect"
+            ).value =
+                firstClass;
+
+
+            displayStudents(firstClass);
+
+        } else {
+
+            document.getElementById(
+                "selectedClass"
+            ).textContent =
+                "Chưa có lớp";
+
+        }
+
+
+        showLoading(false);
+
 
     } catch (error) {
 
-        console.error(error);
-
-        showMessage(
-            "Không thể tải danh sách học sinh."
+        console.error(
+            "LỖI:",
+            error
         );
 
+
+        showMessage(
+            "Không thể tải dữ liệu: " +
+            error.message
+        );
+
+
+        showLoading(false);
+
     }
+
 }
 
 
@@ -141,58 +234,142 @@ async function loadStudents() {
 function renderClasses() {
 
     const select =
-        document.getElementById("classSelect");
+        document.getElementById(
+            "classSelect"
+        );
 
-    select.innerHTML =
-        '<option value="">-- Chọn lớp --</option>';
 
+    select.innerHTML = "";
+
+
+    // Dòng mặc định
+    const defaultOption =
+        document.createElement("option");
+
+
+    defaultOption.value = "";
+
+
+    defaultOption.textContent =
+        "-- Chọn lớp --";
+
+
+    select.appendChild(
+        defaultOption
+    );
+
+
+    // Thêm từng lớp
     classes.forEach(function (item) {
 
         const option =
             document.createElement("option");
 
-        option.value = item.MaLop;
+
+        const maLop =
+            String(
+                item.MaLop || ""
+            ).trim();
+
+
+        const tenLop =
+            String(
+                item.TenLop ||
+                item.MaLop ||
+                ""
+            ).trim();
+
+
+        option.value =
+            maLop;
+
 
         option.textContent =
-            item.TenLop;
+            "Lớp " + tenLop;
 
-        select.appendChild(option);
+
+        select.appendChild(
+            option
+        );
 
     });
+
+
+    console.log(
+        "Đã tạo danh sách lớp:",
+        select.innerHTML
+    );
 
 }
 
 
 // ==========================================
-// HIỂN THỊ HỌC SINH
+// HIỂN THỊ DANH SÁCH HỌC SINH
 // ==========================================
 
 function displayStudents(classId) {
 
     const container =
-        document.getElementById("studentList");
+        document.getElementById(
+            "studentList"
+        );
+
 
     const className =
-        document.getElementById("selectedClass");
+        document.getElementById(
+            "selectedClass"
+        );
 
 
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    // Xóa danh sách cũ
     container.innerHTML = "";
 
 
+    // Chuẩn hóa mã lớp
+    classId =
+        String(
+            classId || ""
+        ).trim();
+
+
+    console.log(
+        "DISPLAY STUDENTS - classId:",
+        classId
+    );
+
+
+    // Nếu chưa chọn lớp
     if (!classId) {
 
         className.textContent =
             "Chưa chọn lớp";
+
+
+        container.innerHTML =
+            '<div class="loading">Vui lòng chọn lớp.</div>';
+
 
         return;
 
     }
 
 
+    // ======================================
+    // TÌM TÊN LỚP
+    // ======================================
+
     const selectedClass =
         classes.find(function (item) {
 
-            return item.MaLop === classId;
+            return String(
+                item.MaLop || ""
+            ).trim() === classId;
 
         });
 
@@ -200,94 +377,166 @@ function displayStudents(classId) {
     if (selectedClass) {
 
         className.textContent =
-            selectedClass.TenLop;
+            selectedClass.TenLop ||
+            ("Lớp " + classId);
+
+    } else {
+
+        className.textContent =
+            "Lớp " + classId;
 
     }
 
 
+    // ======================================
+    // TỪ KHÓA TÌM KIẾM
+    // ======================================
+
     const keyword =
-        document
-            .getElementById("searchInput")
-            .value
-            .trim()
-            .toLowerCase();
+        String(
+            searchInput.value || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    // ======================================
+    // LỌC HỌC SINH
+    // ======================================
+
+    console.log(
+        "Tổng học sinh:",
+        students.length
+    );
 
 
     const filteredStudents =
         students.filter(function (student) {
 
-            const sameClass =
-                String(student.MaLop) ===
-                String(classId);
+            const studentClass =
+                String(
+                    student.MaLop || ""
+                ).trim();
 
-            const name =
-                String(student.HoTen || "")
-                    .toLowerCase();
 
-            return sameClass &&
-                   name.includes(keyword);
+            const studentName =
+                String(
+                    student.HoTen || ""
+                )
+                .trim()
+                .toLowerCase();
+
+
+            console.log(
+                "Kiểm tra:",
+                student.MaHS,
+                studentClass,
+                studentName
+            );
+
+
+            return (
+                studentClass === classId &&
+                studentName.includes(keyword)
+            );
 
         });
 
 
-    if (filteredStudents.length === 0) {
+    console.log(
+        "Học sinh của lớp " +
+        classId +
+        ":",
+        filteredStudents
+    );
+
+
+    // ======================================
+    // KHÔNG CÓ HỌC SINH
+    // ======================================
+
+    if (
+        filteredStudents.length === 0
+    ) {
 
         container.innerHTML =
             '<div class="loading">Không có học sinh.</div>';
+
 
         return;
 
     }
 
 
-    filteredStudents.forEach(function (student) {
+    // ======================================
+    // HIỂN THỊ HỌC SINH
+    // ======================================
 
-        const card =
-            document.createElement("div");
+    filteredStudents.forEach(
+        function (student) {
 
-        card.className =
-            "student-card";
+            const card =
+                document.createElement(
+                    "div"
+                );
 
 
-        card.innerHTML = `
+            card.className =
+                "student-card";
 
-            <div class="student-number">
-                ${student.STT || ""}
-            </div>
 
-            <div class="student-info">
+            card.innerHTML = `
 
-                <div class="student-name">
-                    ${student.HoTen || ""}
+                <div class="student-number">
+                    ${student.STT || ""}
                 </div>
 
-                <div class="student-code">
-                    Mã HS: ${student.MaHS || ""}
+                <div class="student-info">
+
+                    <div class="student-name">
+                        ${student.HoTen || ""}
+                    </div>
+
+                    <div class="student-code">
+                        Mã HS: ${student.MaHS || ""}
+                    </div>
+
                 </div>
 
-            </div>
-
-        `;
+            `;
 
 
-        container.appendChild(card);
+            container.appendChild(
+                card
+            );
 
-    });
+        }
+    );
 
 }
 
 
 // ==========================================
-// LOADING
+// HIỂN THỊ LOADING
 // ==========================================
 
 function showLoading(show) {
 
     const loading =
-        document.getElementById("loading");
+        document.getElementById(
+            "loading"
+        );
+
+
+    if (!loading) {
+        return;
+    }
+
 
     loading.style.display =
-        show ? "block" : "none";
+        show
+            ? "block"
+            : "none";
 
 }
 
@@ -299,17 +548,33 @@ function showLoading(show) {
 function showMessage(text) {
 
     const message =
-        document.getElementById("message");
-
-    message.textContent = text;
-
-    message.style.display = "block";
+        document.getElementById(
+            "message"
+        );
 
 
-    setTimeout(function () {
+    if (!message) {
+        return;
+    }
 
-        message.style.display = "none";
 
-    }, 3000);
+    message.textContent =
+        text;
+
+
+    message.style.display =
+        "block";
+
+
+    setTimeout(
+        function () {
+
+            message.style.display =
+                "none";
+
+        },
+        5000
+    );
 
 }
+```

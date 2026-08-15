@@ -1,1256 +1,3107 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Quản lý lớp học</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f4f7fc;
-      color: #18233f;
-    }
-
-    button,
-    input,
-    select {
-      font-family: inherit;
-    }
-
-    /* =========================
-       LAYOUT
-    ========================= */
-
-    .app {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    /* =========================
-       SIDEBAR
-    ========================= */
-
-    .sidebar {
-      width: 260px;
-      min-height: 100vh;
-      background: white;
-      border-right: 1px solid #e5eaf4;
-      padding: 26px 18px;
-      position: fixed;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 10;
-    }
-
-    .logo-box {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 0 10px 30px;
-    }
-
-    .logo {
-      width: 52px;
-      height: 52px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #3156d9, #547bea);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 23px;
-      font-weight: 800;
-      box-shadow: 0 8px 20px rgba(55, 91, 210, .2);
-    }
-
-    .logo-title {
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .logo-subtitle {
-      color: #8090ae;
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .menu-item {
-      border: none;
-      background: transparent;
-      padding: 15px 16px;
-      border-radius: 15px;
-      text-align: left;
-      font-size: 16px;
-      font-weight: 700;
-      color: #31405e;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      transition: .2s;
-    }
-
-    .menu-item:hover {
-      background: #f1f5ff;
-    }
-
-    .menu-item.active {
-      background: #edf3ff;
-      color: #4265d8;
-    }
-
-    .sidebar-bottom {
-      position: absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 22px;
-    }
-
-    .sync-box {
-      background: #f3f7fd;
-      border-radius: 15px;
-      padding: 14px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .sync-dot {
-      width: 11px;
-      height: 11px;
-      border-radius: 50%;
-      background: #42ba72;
-      box-shadow: 0 0 0 6px #ddf5e7;
-      flex-shrink: 0;
-    }
-
-    .sync-title {
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .sync-text {
-      color: #7d8ba7;
-      font-size: 12px;
-      margin-top: 3px;
-    }
-
-    .teacher-box {
-      border-top: 1px solid #e8edf6;
-      padding-top: 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .teacher-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #ef6d92;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-    }
-
-    .teacher-name {
-      font-weight: 700;
-    }
-
-    .teacher-class {
-      color: #8995ad;
-      font-size: 12px;
-      margin-top: 3px;
-    }
-
-    /* =========================
-       MAIN
-    ========================= */
-
-    .main {
-      margin-left: 260px;
-      width: calc(100% - 260px);
-      min-height: 100vh;
-    }
-
-    .topbar {
-      height: 82px;
-      background: white;
-      border-bottom: 1px solid #e5eaf4;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 34px;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 800;
-    }
-
-    .page-date {
-      margin-top: 5px;
-      color: #8290ab;
-      font-size: 13px;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .refresh-btn,
-    .class-select {
-      height: 48px;
-      border: 1px solid #e0e7f3;
-      background: white;
-      border-radius: 14px;
-      padding: 0 18px;
-      color: #53637f;
-      cursor: pointer;
-    }
-
-    .refresh-btn {
-      width: 48px;
-      font-size: 21px;
-    }
-
-    .class-select {
-      min-width: 160px;
-      font-weight: 700;
-      color: #4262c9;
-    }
-
-    .add-btn {
-      height: 48px;
-      padding: 0 23px;
-      border: none;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #4162d8, #5277e5);
-      color: white;
-      font-size: 15px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(65, 98, 216, .2);
-    }
-
-    .content {
-      padding: 32px;
-      max-width: 1600px;
-      margin: auto;
-    }
-
-    /* =========================
-       HERO
-    ========================= */
-
-    .hero {
-      min-height: 250px;
-      border-radius: 28px;
-      background: linear-gradient(115deg, #3e57c9, #6092ef);
-      color: white;
-      padding: 38px 46px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 14px 35px rgba(53, 87, 190, .15);
-    }
-
-    .hero::before {
-      content: "";
-      position: absolute;
-      width: 430px;
-      height: 430px;
-      border: 55px solid rgba(255,255,255,.08);
-      border-radius: 50%;
-      right: -90px;
-      top: -210px;
-    }
-
-    .hero-badge {
-      display: inline-block;
-      background: rgba(255,255,255,.15);
-      padding: 8px 15px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 700;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero h1 {
-      font-size: 36px;
-      margin: 18px 0 8px;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero p {
-      font-size: 17px;
-      margin: 0;
-      opacity: .92;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero-btn {
-      margin-top: 25px;
-      border: none;
-      background: white;
-      color: #4262d3;
-      padding: 14px 22px;
-      border-radius: 13px;
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero-icon {
-      position: absolute;
-      right: 8%;
-      bottom: 42px;
-      font-size: 70px;
-      z-index: 2;
-    }
-
-    /* =========================
-       STAT CARDS
-    ========================= */
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
-      margin-top: 22px;
-    }
-
-    .stat-card {
-      background: white;
-      border: 1px solid #e9edf5;
-      border-radius: 22px;
-      padding: 25px;
-      display: flex;
-      align-items: center;
-      gap: 17px;
-      min-height: 125px;
-    }
-
-    .stat-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: 17px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 25px;
-      flex-shrink: 0;
-    }
-
-    .purple {
-      background: #f0edff;
-    }
-
-    .green {
-      background: #eaf8ef;
-    }
-
-    .yellow {
-      background: #fff5d9;
-    }
-
-    .blue {
-      background: #edf0ff;
-    }
-
-    .stat-label {
-      color: #8190ad;
-      font-size: 13px;
-    }
-
-    .stat-value {
-      font-size: 29px;
-      font-weight: 800;
-      margin-top: 5px;
-    }
-
-    .stat-sub {
-      color: #8490a7;
-      font-size: 12px;
-      margin-top: 3px;
-    }
-
-    /* =========================
-       PANELS
-    ========================= */
-
-    .two-columns {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 18px;
-      margin-top: 22px;
-    }
-
-    .panel {
-      background: white;
-      border: 1px solid #e9edf5;
-      border-radius: 22px;
-      padding: 25px;
-    }
-
-    .panel-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .panel-title {
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .panel-subtitle {
-      color: #8995ac;
-      font-size: 12px;
-      margin-bottom: 18px;
-    }
-
-    .link-btn {
-      border: none;
-      background: transparent;
-      color: #4262d3;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    /* =========================
-       PROGRESS
-    ========================= */
-
-    .progress-row {
-      display: grid;
-      grid-template-columns: 80px 1fr 25px;
-      gap: 12px;
-      align-items: center;
-      margin: 14px 0;
-      font-size: 13px;
-    }
-
-    .progress-bar {
-      height: 9px;
-      border-radius: 10px;
-      background: #edf1f7;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 10px;
-    }
-
-    .excellent {
-      background: #46b978;
-    }
-
-    .good {
-      background: #4b6cdb;
-    }
-
-    .average {
-      background: #7c61db;
-    }
-
-    .need-help {
-      background: #f3aa26;
-    }
-
-    /* =========================
-       TABLE
-    ========================= */
-
-    .table-panel {
-      margin-top: 22px;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    th {
-      background: #eef2ff;
-      color: #3d4e9b;
-      font-weight: 800;
-      text-align: left;
-      padding: 11px 10px;
-      white-space: nowrap;
-    }
-
-    td {
-      border-bottom: 1px solid #edf0f5;
-      padding: 12px 10px;
-      color: #34415d;
-    }
-
-    tbody tr:hover {
-      background: #fafbff;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .status-present {
-      background: #ddf7e7;
-      color: #27824c;
-    }
-
-    .status-absent {
-      background: #ffe3e3;
-      color: #bd4141;
-    }
-
-    .status-late {
-      background: #fff0c9;
-      color: #a96b00;
-    }
-
-    .empty {
-      text-align: center;
-      color: #909bb0;
-      padding: 35px !important;
-    }
-
-    /* =========================
-       LOADING / ERROR
-    ========================= */
-
-    .loading {
-      color: #72809a;
-      padding: 25px;
-      text-align: center;
-    }
-
-    .error {
-      color: #c53c3c;
-      background: #fff0f0;
-      padding: 15px;
-      border-radius: 12px;
-      margin-top: 15px;
-      display: none;
-    }
-
-    /* =========================
-       RESPONSIVE
-    ========================= */
-
-    @media (max-width: 1100px) {
-
-      .sidebar {
-        width: 210px;
-      }
-
-      .main {
-        margin-left: 210px;
-        width: calc(100% - 210px);
-      }
-
-      .stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .two-columns {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 800px) {
-
-      .sidebar {
-        position: relative;
-        width: 100%;
-        min-height: auto;
-      }
-
-      .sidebar-bottom {
-        position: static;
-        margin-top: 30px;
-      }
-
-      .main {
-        margin-left: 0;
-        width: 100%;
-      }
-
-      .app {
-        display: block;
-      }
-
-      .topbar {
-        padding: 15px;
-        height: auto;
-        gap: 15px;
-        flex-wrap: wrap;
-      }
-
-      .content {
-        padding: 15px;
-      }
-
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        padding: 28px;
-      }
-
-      .hero h1 {
-        font-size: 27px;
-      }
-
-      .hero-icon {
-        display: none;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Quản lý lớp học</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+:root{
+    --blue:#4564d9;
+    --blue2:#5d8eea;
+    --bg:#f5f7fc;
+    --text:#17213d;
+    --muted:#71809f;
+    --border:#e5eaf4;
+    --white:#ffffff;
+    --green:#48b77a;
+    --purple:#765de8;
+    --orange:#f4a623;
+    --red:#e95d6a;
+}
+
+body{
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+button,
+input,
+select{
+    font-family:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+/* =========================
+   LAYOUT
+========================= */
+
+.app{
+    min-height:100vh;
+    display:flex;
+}
+
+.sidebar{
+    width:260px;
+    min-width:260px;
+    background:#fff;
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    z-index:20;
+}
+
+.logo-area{
+    padding:28px 26px 24px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.logo{
+    width:52px;
+    height:52px;
+    border-radius:15px;
+    background:linear-gradient(135deg,#3154c5,#5277e4);
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+    font-weight:800;
+    box-shadow:0 10px 25px rgba(62,91,200,.22);
+}
+
+.logo-text h2{
+    font-size:20px;
+    line-height:1.1;
+}
+
+.logo-text p{
+    margin-top:5px;
+    font-size:12px;
+    color:var(--muted);
+}
+
+.nav{
+    padding:8px 18px;
+}
+
+.nav-item{
+    width:100%;
+    border:0;
+    background:transparent;
+    padding:15px 16px;
+    margin-bottom:6px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    color:#33415f;
+    font-size:16px;
+    font-weight:600;
+    text-align:left;
+}
+
+.nav-item:hover{
+    background:#f2f5ff;
+    color:var(--blue);
+}
+
+.nav-item.active{
+    background:#edf2ff;
+    color:var(--blue);
+}
+
+.nav-icon{
+    width:25px;
+    text-align:center;
+    font-size:20px;
+}
+
+.sidebar-bottom{
+    margin-top:auto;
+    padding:18px;
+}
+
+.sync{
+    background:#f4f7fc;
+    border-radius:16px;
+    padding:15px;
+    display:flex;
+    gap:11px;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.sync-dot{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#49b97b;
+    box-shadow:0 0 0 5px #e0f5e9;
+}
+
+.sync strong{
+    display:block;
+    font-size:14px;
+}
+
+.sync span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:12px;
+}
+
+.teacher{
+    border-top:1px solid var(--border);
+    padding-top:20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.teacher-avatar{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:#ef6685;
+    color:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-weight:800;
+}
+
+.teacher strong{
+    font-size:14px;
+}
+
+.teacher small{
+    color:var(--muted);
+}
+
+/* =========================
+   MAIN
+========================= */
+
+.main{
+    margin-left:260px;
+    width:calc(100% - 260px);
+    min-height:100vh;
+}
+
+.topbar{
+    height:82px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 34px;
+}
+
+.page-title h1{
+    font-size:23px;
+}
+
+.page-title p{
+    color:var(--muted);
+    margin-top:3px;
+    font-size:13px;
+}
+
+.top-actions{
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+
+.refresh-btn{
+    width:46px;
+    height:46px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+    font-size:20px;
+    color:#63718d;
+}
+
+.class-select{
+    min-width:190px;
+    height:46px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+    padding:0 15px;
+    color:var(--blue);
+    font-weight:700;
+    outline:none;
+}
+
+.add-btn{
+    height:46px;
+    padding:0 22px;
+    border:0;
+    border-radius:14px;
+    color:#fff;
+    background:linear-gradient(135deg,#3f5fd1,#4e72e2);
+    font-weight:700;
+    font-size:15px;
+    box-shadow:0 9px 20px rgba(67,94,205,.22);
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+.content{
+    max-width:1450px;
+    margin:auto;
+    padding:30px 34px 70px;
+}
+
+.hero{
+    min-height:255px;
+    border-radius:28px;
+    padding:42px 46px;
+    position:relative;
+    overflow:hidden;
+    color:white;
+    background:
+        linear-gradient(110deg,#3f55c4,#6599ed);
+    box-shadow:0 20px 40px rgba(60,83,170,.14);
+}
+
+.hero:after{
+    content:"";
+    position:absolute;
+    width:440px;
+    height:440px;
+    right:-80px;
+    top:-170px;
+    border:65px solid rgba(255,255,255,.09);
+    border-radius:50%;
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+    max-width:850px;
+}
+
+.hero-label{
+    display:inline-flex;
+    background:rgba(255,255,255,.17);
+    padding:8px 15px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:700;
+}
+
+.hero h2{
+    margin-top:17px;
+    font-size:34px;
+    line-height:1.15;
+}
+
+.hero p{
+    margin-top:12px;
+    font-size:17px;
+    color:rgba(255,255,255,.9);
+}
+
+.hero-btn{
+    margin-top:26px;
+    background:white;
+    color:#4160cf;
+    border:0;
+    padding:13px 20px;
+    border-radius:13px;
+    font-size:15px;
+    font-weight:800;
+}
+
+.hero-cap{
+    position:absolute;
+    right:90px;
+    bottom:50px;
+    font-size:70px;
+    z-index:2;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-top:22px;
+}
+
+.stat{
+    min-height:130px;
+    background:white;
+    border:1px solid #edf0f6;
+    border-radius:21px;
+    padding:24px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    box-shadow:0 8px 24px rgba(34,50,90,.04);
+}
+
+.stat-icon{
+    width:52px;
+    height:52px;
+    min-width:52px;
+    border-radius:16px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:25px;
+}
+
+.stat:nth-child(1) .stat-icon{
+    background:#eef2ff;
+}
+
+.stat:nth-child(2) .stat-icon{
+    background:#e9f8ef;
+}
+
+.stat:nth-child(3) .stat-icon{
+    background:#fff5db;
+}
+
+.stat:nth-child(4) .stat-icon{
+    background:#f0ebff;
+}
+
+.stat-label{
+    color:#8190ac;
+    font-size:13px;
+}
+
+.stat-number{
+    margin-top:4px;
+    font-size:26px;
+    font-weight:800;
+}
+
+.stat-sub{
+    color:#8b98af;
+    font-size:12px;
+    margin-top:3px;
+}
+
+/* =========================
+   TWO PANELS
+========================= */
+
+.two-col{
+    display:grid;
+    grid-template-columns:1.45fr .9fr;
+    gap:20px;
+    margin-top:20px;
+}
+
+.panel{
+    background:white;
+    border-radius:22px;
+    border:1px solid #edf0f6;
+    padding:24px;
+    box-shadow:0 8px 24px rgba(34,50,90,.04);
+}
+
+.panel-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:20px;
+}
+
+.panel-title h3{
+    font-size:17px;
+}
+
+.panel-title p{
+    color:#8794ac;
+    font-size:12px;
+    margin-top:5px;
+}
+
+.panel-link{
+    color:#4866d5;
+    font-size:12px;
+    font-weight:700;
+}
+
+.progress-row{
+    display:grid;
+    grid-template-columns:90px 1fr 30px;
+    align-items:center;
+    gap:10px;
+    margin:13px 0;
+    font-size:12px;
+}
+
+.progress{
+    height:8px;
+    border-radius:99px;
+    background:#edf1f7;
+    overflow:hidden;
+}
+
+.progress-bar{
+    height:100%;
+    border-radius:99px;
+}
+
+.bar-excellent{
+    background:#47b577;
+}
+
+.bar-good{
+    background:#4e70dc;
+}
+
+.bar-fair{
+    background:#8060df;
+}
+
+.bar-effort{
+    background:#f2a51d;
+}
+
+.notice-empty{
+    min-height:100px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#8794aa;
+    font-size:13px;
+}
+
+/* =========================
+   DATA PANEL
+========================= */
+
+.data-panel{
+    margin-top:20px;
+}
+
+.search-row{
+    display:grid;
+    grid-template-columns:1fr 220px auto;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.input{
+    height:42px;
+    border:1px solid #dce3ef;
+    border-radius:10px;
+    padding:0 13px;
+    outline:none;
+    width:100%;
+}
+
+.input:focus{
+    border-color:#6884e5;
+}
+
+.small-btn{
+    border:0;
+    border-radius:10px;
+    background:#4b68d6;
+    color:#fff;
+    padding:0 17px;
+    font-weight:700;
+}
+
+.table-wrap{
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:700px;
+}
+
+thead{
+    background:#eef2ff;
+}
+
+th{
+    padding:10px 12px;
+    color:#3e4f83;
+    text-align:left;
+    font-size:11px;
+    white-space:nowrap;
+}
+
+td{
+    padding:11px 12px;
+    border-bottom:1px solid #edf0f5;
+    font-size:12px;
+    color:#39445c;
+}
+
+tr:hover td{
+    background:#fafbff;
+}
+
+.badge{
+    display:inline-block;
+    padding:5px 9px;
+    border-radius:99px;
+    font-size:11px;
+    font-weight:700;
+}
+
+.badge-green{
+    background:#dff5e8;
+    color:#258351;
+}
+
+.badge-red{
+    background:#ffe1e5;
+    color:#c53b4d;
+}
+
+.badge-orange{
+    background:#fff0cc;
+    color:#a66b00;
+}
+
+.empty-row{
+    text-align:center;
+    padding:30px !important;
+    color:#8a96ab;
+}
+
+/* =========================
+   LOADING / ERROR
+========================= */
+
+.loading{
+    position:fixed;
+    inset:0;
+    background:rgba(255,255,255,.72);
+    backdrop-filter:blur(3px);
+    z-index:100;
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+.loading.show{
+    display:flex;
+}
+
+.loading-box{
+    background:#fff;
+    padding:24px 30px;
+    border-radius:18px;
+    box-shadow:0 15px 50px rgba(30,40,80,.18);
+    text-align:center;
+}
+
+.spinner{
+    width:34px;
+    height:34px;
+    border:4px solid #e6ebf6;
+    border-top-color:#4b68d6;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    margin:auto auto 12px;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg);}
+}
+
+.toast{
+    position:fixed;
+    right:25px;
+    bottom:25px;
+    max-width:420px;
+    background:#1f2942;
+    color:#fff;
+    padding:14px 18px;
+    border-radius:13px;
+    z-index:200;
+    display:none;
+    box-shadow:0 15px 40px rgba(0,0,0,.2);
+    font-size:13px;
+}
+
+.toast.show{
+    display:block;
+}
+
+.toast.error{
+    background:#c73d4f;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:1100px){
+
+    .sidebar{
+        width:210px;
+        min-width:210px;
+    }
+
+    .main{
+        margin-left:210px;
+        width:calc(100% - 210px);
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .two-col{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:800px){
+
+    .sidebar{
+        position:relative;
+        width:100%;
+        min-width:0;
+        height:auto;
+    }
+
+    .app{
+        display:block;
+    }
+
+    .sidebar-bottom{
+        display:none;
+    }
+
+    .nav{
+        display:flex;
+        overflow:auto;
+    }
+
+    .nav-item{
+        min-width:130px;
+    }
+
+    .main{
+        margin-left:0;
+        width:100%;
+    }
+
+    .topbar{
+        padding:0 15px;
+    }
+
+    .class-select{
+        min-width:120px;
+    }
+
+    .add-btn{
+        display:none;
+    }
+
+    .content{
+        padding:18px;
+    }
+
+    .hero{
+        padding:30px;
+    }
+
+    .hero h2{
+        font-size:26px;
+    }
+
+    .hero-cap{
+        right:20px;
+        font-size:45px;
+    }
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+
+    .search-row{
+        grid-template-columns:1fr;
+    }
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-    <div class="logo-box">
-      <div class="logo">QL</div>
+        <div class="logo-area">
+            <div class="logo">QL</div>
 
-      <div>
-        <div class="logo-title">Quản lý lớp</div>
-        <div class="logo-subtitle">Gọn gàng trong từng tiết</div>
-      </div>
-    </div>
-
-    <nav class="menu">
-
-      <button class="menu-item active">
-        🏠
-        <span>Tổng quan</span>
-      </button>
-
-      <button class="menu-item">
-        👨‍🎓
-        <span>Học sinh</span>
-      </button>
-
-      <button class="menu-item">
-        📝
-        <span>Trong tiết</span>
-      </button>
-
-      <button class="menu-item">
-        📊
-        <span>Thống kê</span>
-      </button>
-
-    </nav>
-
-    <div class="sidebar-bottom">
-
-      <div class="sync-box">
-        <div class="sync-dot"></div>
-
-        <div>
-          <div class="sync-title">Đã đồng bộ</div>
-          <div class="sync-text">Google Sheet đang hoạt động</div>
-        </div>
-      </div>
-
-      <div class="teacher-box">
-
-        <div class="teacher-avatar">
-          TH
+            <div class="logo-text">
+                <h2>Quản lý lớp</h2>
+                <p>Gọn gàng trong từng tiết</p>
+            </div>
         </div>
 
-        <div>
-          <div class="teacher-name">
-            Cô Thu Hường
-          </div>
-
-          <div class="teacher-class" id="teacherClass">
-            Lớp —
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-  </aside>
-
-
-  <!-- MAIN -->
-  <main class="main">
-
-    <header class="topbar">
-
-      <div>
-        <div class="page-title">Tổng quan</div>
-
-        <div class="page-date" id="currentDate">
-          Đang tải ngày...
-        </div>
-      </div>
-
-
-      <div class="top-actions">
-
-        <button
-          class="refresh-btn"
-          onclick="loadAllData()"
-          title="Tải lại dữ liệu">
-          ↻
-        </button>
-
-        <select
-          id="classSelect"
-          class="class-select">
-          <option value="">
-            Đang tải lớp...
-          </option>
-        </select>
-
-        <button
-          class="add-btn"
-          onclick="alert('Chức năng thêm học sinh sẽ được bổ sung sau.')">
-          ＋ Thêm học sinh
-        </button>
-
-      </div>
-
-    </header>
-
-
-    <section class="content">
-
-      <!-- HERO -->
-
-      <section class="hero">
-
-        <div class="hero-badge">
-          👋 CHÀO NGÀY MỚI
-        </div>
-
-        <h1 id="welcomeText">
-          Chào cô Thu Hường!
-        </h1>
-
-        <p>
-          Một ngày dạy học thật vui nhé.
-          Mọi con số quan trọng của lớp đều ở đây.
-        </p>
-
-        <button
-          class="hero-btn"
-          onclick="scrollToStudents()">
-          Mở danh sách lớp&nbsp;&nbsp; →
-        </button>
-
-        <div class="hero-icon">
-          🎓
-        </div>
-
-      </section>
-
-
-      <!-- STATS -->
-
-      <section class="stats">
-
-        <div class="stat-card">
-
-          <div class="stat-icon purple">
-            👥
-          </div>
-
-          <div>
-            <div class="stat-label">
-              Sĩ số lớp
-            </div>
-
-            <div
-              class="stat-value"
-              id="totalStudents">
-              0
-            </div>
-
-            <div
-              class="stat-sub"
-              id="statClassName">
-              Lớp —
-            </div>
-          </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <div class="stat-icon green">
-            ⭐
-          </div>
-
-          <div>
-            <div class="stat-label">
-              Điểm trung bình
-            </div>
-
-            <div
-              class="stat-value"
-              id="averageScore">
-              —
-            </div>
-
-            <div class="stat-sub">
-              Cùng lớp cố gắng thêm nhé
-            </div>
-          </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <div class="stat-icon yellow">
-            🏆
-          </div>
-
-          <div>
-            <div class="stat-label">
-              Điểm tốt
-            </div>
-
-            <div
-              class="stat-value"
-              id="goodPercent">
-              0%
-            </div>
-
-            <div class="stat-sub">
-              Tỷ lệ điểm từ 8 trở lên
-            </div>
-          </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <div class="stat-icon blue">
-            📚
-          </div>
-
-          <div>
-            <div class="stat-label">
-              Cột điểm TX
-            </div>
-
-            <div class="stat-value">
-              4
-            </div>
-
-            <div class="stat-sub">
-              TX1, TX2, TX3 và TX4
-            </div>
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- TWO PANELS -->
-
-      <section class="two-columns">
-
-        <!-- HỌC TẬP -->
-
-        <div class="panel">
-
-          <div class="panel-title-row">
-
-            <div class="panel-title">
-              Tình hình học tập
-            </div>
-
-            <button class="link-btn">
-              Cả lớp
+        <nav class="nav">
+
+            <button class="nav-item active" data-section="overview">
+                <span class="nav-icon">🏠</span>
+                <span>Tổng quan</span>
             </button>
 
-          </div>
-
-          <div class="panel-subtitle">
-            Phân bố theo điểm trung bình
-          </div>
-
-
-          <div class="progress-row">
-
-            <span>Xuất sắc</span>
-
-            <div class="progress-bar">
-              <div
-                id="excellentBar"
-                class="progress-fill excellent"
-                style="width:0%">
-              </div>
-            </div>
-
-            <b id="excellentCount">0</b>
-
-          </div>
-
-
-          <div class="progress-row">
-
-            <span>Tốt</span>
-
-            <div class="progress-bar">
-              <div
-                id="goodBar"
-                class="progress-fill good"
-                style="width:0%">
-              </div>
-            </div>
-
-            <b id="goodCount">0</b>
-
-          </div>
-
-
-          <div class="progress-row">
-
-            <span>Khá</span>
-
-            <div class="progress-bar">
-              <div
-                id="averageBar"
-                class="progress-fill average"
-                style="width:0%">
-              </div>
-            </div>
-
-            <b id="averageCount">0</b>
-
-          </div>
-
-
-          <div class="progress-row">
-
-            <span>Cần cố gắng</span>
-
-            <div class="progress-bar">
-              <div
-                id="needHelpBar"
-                class="progress-fill need-help"
-                style="width:0%">
-              </div>
-            </div>
-
-            <b id="needHelpCount">0</b>
-
-          </div>
-
-        </div>
-
-
-        <!-- CẦN CHÚ Ý -->
-
-        <div class="panel">
-
-          <div class="panel-title-row">
-
-            <div class="panel-title">
-              Cần chú ý
-            </div>
-
-            <button
-              class="link-btn"
-              onclick="scrollToScores()">
-              Xem sổ điểm
+            <button class="nav-item" data-section="students">
+                <span class="nav-icon">🧑‍🎓</span>
+                <span>Học sinh</span>
             </button>
 
-          </div>
+            <button class="nav-item" data-section="scores">
+                <span class="nav-icon">📝</span>
+                <span>Trong tiết</span>
+            </button>
 
-          <div class="panel-subtitle">
-            Học sinh cần được động viên
-          </div>
+            <button class="nav-item" data-section="statistics">
+                <span class="nav-icon">📊</span>
+                <span>Thống kê</span>
+            </button>
 
-          <div
-            id="attentionList"
-            class="empty">
-            🎉 Chưa có học sinh cần chú ý.
-          </div>
+        </nav>
 
-        </div>
+        <div class="sidebar-bottom">
 
-      </section>
+            <div class="sync">
+                <div class="sync-dot"></div>
 
+                <div>
+                    <strong id="syncText">Đang kết nối</strong>
+                    <span>Google Sheet đang hoạt động</span>
+                </div>
+            </div>
 
-      <!-- STUDENTS -->
+            <div class="teacher">
+                <div class="teacher-avatar">GV</div>
 
-      <section
-        id="studentsPanel"
-        class="panel table-panel">
-
-        <div class="panel-title-row">
-
-          <div class="panel-title">
-            👨‍🎓 Danh sách học sinh
-          </div>
-
-          <div
-            id="studentCountLabel"
-            class="stat-label">
-            0 học sinh
-          </div>
+                <div>
+                    <strong>Cô Thu Hường</strong>
+                    <small id="teacherClass">Lớp —</small>
+                </div>
+            </div>
 
         </div>
 
-        <div class="panel-subtitle">
-          Danh sách học sinh của lớp đang chọn
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <header class="topbar">
+
+            <div class="page-title">
+                <h1>Tổng quan</h1>
+                <p id="todayText"></p>
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="refresh-btn"
+                    id="refreshBtn"
+                    title="Tải lại dữ liệu">
+                    ↻
+                </button>
+
+                <select
+                    class="class-select"
+                    id="classSelect">
+                    <option value="">Đang tải lớp...</option>
+                </select>
+
+                <button
+                    class="add-btn"
+                    id="addStudentBtn">
+                    ＋ Thêm học sinh
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <div class="content">
+
+            <!-- HERO -->
+            <section class="hero">
+
+                <div class="hero-content">
+
+                    <span class="hero-label">
+                        👋 CHÀO NGÀY MỚI
+                    </span>
+
+                    <h2>
+                        Chào cô Thu Hường!
+                    </h2>
+
+                    <p>
+                        Một ngày dạy học thật vui nhé.
+                        Mọi con số quan trọng của lớp đều ở đây.
+                    </p>
+
+                    <button
+                        class="hero-btn"
+                        id="openClassBtn">
+                        Mở danh sách lớp&nbsp;&nbsp; →
+                    </button>
+
+                </div>
+
+                <div class="hero-cap">
+                    🎓
+                </div>
+
+            </section>
+
+
+            <!-- STATISTICS -->
+            <section class="stats">
+
+                <div class="stat">
+
+                    <div class="stat-icon">
+                        👥
+                    </div>
+
+                    <div>
+                        <div class="stat-label">
+                            Sĩ số lớp
+                        </div>
+
+                        <div
+                            class="stat-number"
+                            id="statTotal">
+                            0
+                        </div>
+
+                        <div
+                            class="stat-sub"
+                            id="statClass">
+                            Lớp —
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-icon">
+                        ⭐
+                    </div>
+
+                    <div>
+                        <div class="stat-label">
+                            Điểm trung bình
+                        </div>
+
+                        <div class="stat-number">
+                            <span id="statAverage">—</span>
+                            <small>/10</small>
+                        </div>
+
+                        <div class="stat-sub">
+                            Cùng lớp cố gắng thêm nhé
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-icon">
+                        🏆
+                    </div>
+
+                    <div>
+                        <div class="stat-label">
+                            Điểm tốt
+                        </div>
+
+                        <div class="stat-number">
+                            <span id="statGood">0</span>%
+                        </div>
+
+                        <div class="stat-sub">
+                            Tỷ lệ điểm từ 8 trở lên
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="stat">
+
+                    <div class="stat-icon">
+                        📚
+                    </div>
+
+                    <div>
+                        <div class="stat-label">
+                            Cột điểm TX
+                        </div>
+
+                        <div class="stat-number">
+                            4
+                        </div>
+
+                        <div class="stat-sub">
+                            TX1, TX2, TX3 và TX4
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- TWO PANELS -->
+            <section class="two-col">
+
+                <div class="panel">
+
+                    <div class="panel-title">
+
+                        <div>
+                            <h3>Tình hình học tập</h3>
+                            <p>Phân bố theo điểm trung bình</p>
+                        </div>
+
+                        <span class="panel-link">
+                            Cả lớp
+                        </span>
+
+                    </div>
+
+
+                    <div class="progress-row">
+                        <span>Xuất sắc</span>
+
+                        <div class="progress">
+                            <div
+                                id="barExcellent"
+                                class="progress-bar bar-excellent"
+                                style="width:0%">
+                            </div>
+                        </div>
+
+                        <b id="countExcellent">0</b>
+                    </div>
+
+
+                    <div class="progress-row">
+                        <span>Tốt</span>
+
+                        <div class="progress">
+                            <div
+                                id="barGood"
+                                class="progress-bar bar-good"
+                                style="width:0%">
+                            </div>
+                        </div>
+
+                        <b id="countGood">0</b>
+                    </div>
+
+
+                    <div class="progress-row">
+                        <span>Khá</span>
+
+                        <div class="progress">
+                            <div
+                                id="barFair"
+                                class="progress-bar bar-fair"
+                                style="width:0%">
+                            </div>
+                        </div>
+
+                        <b id="countFair">0</b>
+                    </div>
+
+
+                    <div class="progress-row">
+                        <span>Cần cố gắng</span>
+
+                        <div class="progress">
+                            <div
+                                id="barEffort"
+                                class="progress-bar bar-effort"
+                                style="width:0%">
+                            </div>
+                        </div>
+
+                        <b id="countEffort">0</b>
+                    </div>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="panel-title">
+
+                        <div>
+                            <h3>Cần chú ý</h3>
+                            <p>Học sinh cần được động viên</p>
+                        </div>
+
+                        <span class="panel-link">
+                            Xem sổ điểm
+                        </span>
+
+                    </div>
+
+                    <div
+                        id="attentionBox"
+                        class="notice-empty">
+                        🎉 Lớp đang có tinh thần tốt!
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- STUDENTS -->
+            <section
+                class="panel data-panel"
+                id="studentSection">
+
+                <div class="panel-title">
+
+                    <div>
+                        <h3>🧑‍🎓 Danh sách học sinh</h3>
+                        <p>
+                            Danh sách học sinh của lớp đang chọn
+                        </p>
+                    </div>
+
+                    <span
+                        class="panel-link"
+                        id="studentCount">
+                        0 học sinh
+                    </span>
+
+                </div>
+
+
+                <div class="search-row">
+
+                    <input
+                        type="text"
+                        id="studentSearch"
+                        class="input"
+                        placeholder="Nhập mã HS hoặc họ tên...">
+
+                    <input
+                        type="date"
+                        id="attendanceDate"
+                        class="input">
+
+                    <button
+                        class="small-btn"
+                        id="attendanceBtn">
+                        Xem điểm danh
+                    </button>
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>STT</th>
+                                <th>MÃ HS</th>
+                                <th>HỌ VÀ TÊN</th>
+                                <th>NGÀY SINH</th>
+                                <th>GIỚI TÍNH</th>
+                                <th>GHI CHÚ</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="studentsBody">
+
+                            <tr>
+                                <td colspan="6" class="empty-row">
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- SCORES -->
+            <section class="panel data-panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <h3>📊 Điểm số</h3>
+                        <p>
+                            Điểm trung bình được tính từ các cột TX có dữ liệu
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>STT</th>
+                                <th>MÃ HS</th>
+                                <th>HỌ VÀ TÊN</th>
+                                <th>TX1</th>
+                                <th>TX2</th>
+                                <th>TX3</th>
+                                <th>TX4</th>
+                                <th>ĐIỂM TB</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="scoresBody">
+
+                            <tr>
+                                <td colspan="8" class="empty-row">
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- COMPETITION -->
+            <section class="panel data-panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <h3>🏆 Thi đua</h3>
+                        <p>
+                            Các hoạt động thi đua của học sinh
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>STT</th>
+                                <th>MÃ HS</th>
+                                <th>NGÀY</th>
+                                <th>LOẠI</th>
+                                <th>NỘI DUNG</th>
+                                <th>ĐIỂM</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="competitionBody">
+
+                            <tr>
+                                <td colspan="6" class="empty-row">
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ATTENDANCE -->
+            <section class="panel data-panel">
+
+                <div class="panel-title">
+
+                    <div>
+                        <h3>📅 Điểm danh</h3>
+                        <p>
+                            Trạng thái điểm danh của học sinh
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>STT</th>
+                                <th>MÃ HS</th>
+                                <th>HỌ TÊN</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>NGÀY</th>
+                                <th>GHI CHÚ</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="attendanceBody">
+
+                            <tr>
+                                <td colspan="6" class="empty-row">
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
         </div>
 
-        <div class="table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-                <th>STT</th>
-                <th>MÃ HS</th>
-                <th>HỌ VÀ TÊN</th>
-                <th>NGÀY SINH</th>
-                <th>GIỚI TÍNH</th>
-                <th>GHI CHÚ</th>
-              </tr>
-
-            </thead>
-
-            <tbody id="studentsTable">
-
-              <tr>
-                <td
-                  colspan="6"
-                  class="loading">
-                  Đang tải học sinh...
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </section>
-
-
-      <!-- SCORES -->
-
-      <section
-        id="scoresPanel"
-        class="panel table-panel">
-
-        <div class="panel-title-row">
-
-          <div class="panel-title">
-            📊 Điểm số
-          </div>
-
-        </div>
-
-        <div class="panel-subtitle">
-          Điểm trung bình được tính từ các cột TX có dữ liệu
-        </div>
-
-        <div class="table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-                <th>STT</th>
-                <th>MÃ HS</th>
-                <th>HỌ VÀ TÊN</th>
-                <th>TX1</th>
-                <th>TX2</th>
-                <th>TX3</th>
-                <th>TX4</th>
-                <th>ĐIỂM TB</th>
-              </tr>
-
-            </thead>
-
-            <tbody id="scoresTable">
-
-              <tr>
-                <td
-                  colspan="8"
-                  class="loading">
-                  Đang tải điểm...
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </section>
-
-
-      <!-- THI ĐUA -->
-
-      <section class="panel table-panel">
-
-        <div class="panel-title-row">
-
-          <div class="panel-title">
-            🏆 Thi đua
-          </div>
-
-        </div>
-
-        <div class="table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-                <th>STT</th>
-                <th>MÃ HS</th>
-                <th>NGÀY</th>
-                <th>LỚP</th>
-                <th>NỘI DUNG</th>
-                <th>ĐIỂM</th>
-              </tr>
-
-            </thead>
-
-            <tbody id="competitionTable">
-
-              <tr>
-                <td
-                  colspan="6"
-                  class="loading">
-                  Đang tải thi đua...
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </section>
-
-
-      <!-- ĐIỂM DANH -->
-
-      <section class="panel table-panel">
-
-        <div class="panel-title-row">
-
-          <div class="panel-title">
-            📅 Điểm danh
-          </div>
-
-        </div>
-
-        <div class="table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-                <th>STT</th>
-                <th>MÃ HS</th>
-                <th>HỌ TÊN</th>
-                <th>TRẠNG THÁI</th>
-                <th>NGÀY</th>
-                <th>GHI CHÚ</th>
-              </tr>
-
-            </thead>
-
-            <tbody id="attendanceTable">
-
-              <tr>
-                <td
-                  colspan="6"
-                  class="loading">
-                  Đang tải điểm danh...
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </section>
-
-
-      <div
-        id="errorBox"
-        class="error">
-      </div>
-
-    </section>
-
-  </main>
+    </main>
 
 </div>
 
 
-<script src="app.js"></script>
+<!-- LOADING -->
+<div
+    class="loading"
+    id="loading">
+
+    <div class="loading-box">
+
+        <div class="spinner"></div>
+
+        <strong>
+            Đang tải dữ liệu Google Sheets...
+        </strong>
+
+        <p
+            id="loadingText"
+            style="margin-top:6px;color:#7b879f;font-size:12px">
+            Vui lòng chờ
+        </p>
+
+    </div>
+
+</div>
+
+
+<div
+    class="toast"
+    id="toast">
+</div>
+
+
+<script>
+
+/* ==========================================================
+   CẤU HÌNH GOOGLE SHEETS
+========================================================== */
+
+const SPREADSHEET_ID =
+    "1H15_JVJ3jXKnzNxxhfk-T_0UlK0uo-aMslG5MeZo3EU";
+
+const SHEETS = {
+    lop: "LOP",
+    hocsinh: "HOCSINH",
+    diem: "DIEM",
+    thidua: "THIDUA",
+    diemdanh: "DIEMDANH"
+};
+
+
+/* ==========================================================
+   DỮ LIỆU ỨNG DỤNG
+========================================================== */
+
+let DATA = {
+    lop: [],
+    hocsinh: [],
+    diem: [],
+    thidua: [],
+    diemdanh: []
+};
+
+let currentClass = "";
+
+
+/* ==========================================================
+   DOM
+========================================================== */
+
+const $ = id => document.getElementById(id);
+
+
+/* ==========================================================
+   NGÀY HIỆN TẠI
+========================================================== */
+
+function setToday(){
+
+    const now = new Date();
+
+    const days = [
+        "Chủ Nhật",
+        "Thứ Hai",
+        "Thứ Ba",
+        "Thứ Tư",
+        "Thứ Năm",
+        "Thứ Sáu",
+        "Thứ Bảy"
+    ];
+
+    const text =
+        days[now.getDay()] +
+        ", " +
+        String(now.getDate()).padStart(2,"0") +
+        "/" +
+        String(now.getMonth()+1).padStart(2,"0") +
+        "/" +
+        now.getFullYear();
+
+    $("todayText").textContent = text;
+
+    const iso =
+        now.getFullYear() +
+        "-" +
+        String(now.getMonth()+1).padStart(2,"0") +
+        "-" +
+        String(now.getDate()).padStart(2,"0");
+
+    $("attendanceDate").value = iso;
+}
+
+
+/* ==========================================================
+   HIỂN THỊ LOADING
+========================================================== */
+
+function showLoading(text){
+
+    $("loadingText").textContent =
+        text || "Vui lòng chờ";
+
+    $("loading").classList.add("show");
+}
+
+
+function hideLoading(){
+
+    $("loading").classList.remove("show");
+}
+
+
+/* ==========================================================
+   THÔNG BÁO
+========================================================== */
+
+let toastTimer;
+
+function toast(message, error=false){
+
+    const el = $("toast");
+
+    el.textContent = message;
+
+    el.className =
+        "toast show" +
+        (error ? " error" : "");
+
+    clearTimeout(toastTimer);
+
+    toastTimer = setTimeout(() => {
+        el.className = "toast";
+    }, 4500);
+}
+
+
+/* ==========================================================
+   CHUẨN HÓA CHUỖI
+========================================================== */
+
+function normalize(value){
+
+    return String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .replace(/đ/g,"d")
+        .replace(/\s+/g," ");
+}
+
+
+/* ==========================================================
+   CHUẨN HÓA HEADER
+========================================================== */
+
+function normalizeHeader(value){
+
+    return normalize(value)
+        .replace(/[^a-z0-9]/g,"");
+}
+
+
+/* ==========================================================
+   TÌM CỘT THEO NHIỀU TÊN
+========================================================== */
+
+function findColumn(row, names){
+
+    const wanted =
+        names.map(normalizeHeader);
+
+    const keys = Object.keys(row);
+
+    for(const key of keys){
+
+        const nk = normalizeHeader(key);
+
+        if(wanted.includes(nk)){
+            return key;
+        }
+    }
+
+    for(const key of keys){
+
+        const nk = normalizeHeader(key);
+
+        for(const name of wanted){
+
+            if(
+                nk.includes(name) ||
+                name.includes(nk)
+            ){
+                return key;
+            }
+        }
+    }
+
+    return null;
+}
+
+
+/* ==========================================================
+   GIÁ TRỊ THEO CỘT
+========================================================== */
+
+function getValue(row, aliases){
+
+    const col =
+        findColumn(row, aliases);
+
+    return col ? row[col] : "";
+}
+
+
+/* ==========================================================
+   SỐ
+========================================================== */
+
+function toNumber(value){
+
+    if(value === null || value === undefined){
+        return NaN;
+    }
+
+    let s = String(value)
+        .trim()
+        .replace(",", ".");
+
+    const n = Number(s);
+
+    return Number.isFinite(n)
+        ? n
+        : NaN;
+}
+
+
+/* ==========================================================
+   GOOGLE SHEETS GVIZ
+========================================================== */
+
+async function loadSheet(sheetName){
+
+    const url =
+        "https://docs.google.com/spreadsheets/d/" +
+        SPREADSHEET_ID +
+        "/gviz/tq?tqx=out:json&sheet=" +
+        encodeURIComponent(sheetName);
+
+    const response =
+        await fetch(url, {
+            cache:"no-store"
+        });
+
+    if(!response.ok){
+
+        throw new Error(
+            "Không thể đọc Sheet " +
+            sheetName +
+            " (" +
+            response.status +
+            ")"
+        );
+    }
+
+    const text =
+        await response.text();
+
+    const start =
+        text.indexOf("{");
+
+    const end =
+        text.lastIndexOf("}");
+
+    if(start < 0 || end < 0){
+
+        throw new Error(
+            "Google Sheets không trả về dữ liệu JSON cho Sheet " +
+            sheetName
+        );
+    }
+
+    const json =
+        JSON.parse(
+            text.substring(start,end+1)
+        );
+
+    if(
+        !json.table ||
+        !json.table.cols
+    ){
+
+        throw new Error(
+            "Sheet " +
+            sheetName +
+            " không có dữ liệu."
+        );
+    }
+
+    const headers =
+        json.table.cols.map(
+            (col,index) =>
+                col.label ||
+                col.id ||
+                "Cột " + (index+1)
+        );
+
+    const rows =
+        (json.table.rows || []).map(row => {
+
+            const obj = {};
+
+            headers.forEach(
+                (header,index) => {
+
+                    const cell =
+                        row.c &&
+                        row.c[index];
+
+                    let value = "";
+
+                    if(cell){
+
+                        if(
+                            cell.v !== undefined &&
+                            cell.v !== null
+                        ){
+                            value = cell.v;
+                        }
+                        else if(
+                            cell.f !== undefined &&
+                            cell.f !== null
+                        ){
+                            value = cell.f;
+                        }
+                    }
+
+                    obj[header] = value;
+                }
+            );
+
+            return obj;
+        });
+
+    return rows.filter(row =>
+        Object.values(row).some(
+            value =>
+                String(value ?? "").trim() !== ""
+        )
+    );
+}
+
+
+/* ==========================================================
+   TẢI TOÀN BỘ GOOGLE SHEET
+========================================================== */
+
+async function loadAllData(){
+
+    showLoading(
+        "Đang đọc dữ liệu từ Google Sheets..."
+    );
+
+    try{
+
+        const [
+            lop,
+            hocsinh,
+            diem,
+            thidua,
+            diemdanh
+        ] = await Promise.all([
+
+            loadSheet(SHEETS.lop),
+
+            loadSheet(SHEETS.hocsinh),
+
+            loadSheet(SHEETS.diem),
+
+            loadSheet(SHEETS.thidua),
+
+            loadSheet(SHEETS.diemdanh)
+
+        ]);
+
+        DATA.lop = lop;
+        DATA.hocsinh = hocsinh;
+        DATA.diem = diem;
+        DATA.thidua = thidua;
+        DATA.diemdanh = diemdanh;
+
+        console.log(
+            "===== DỮ LIỆU GOOGLE SHEETS ====="
+        );
+
+        console.log("LOP:", DATA.lop);
+
+        console.log(
+            "HOCSINH:",
+            DATA.hocsinh
+        );
+
+        console.log(
+            "DIEM:",
+            DATA.diem
+        );
+
+        console.log(
+            "THIDUA:",
+            DATA.thidua
+        );
+
+        console.log(
+            "DIEMDANH:",
+            DATA.diemdanh
+        );
+
+        buildClassList();
+
+        $("syncText").textContent =
+            "Đã đồng bộ";
+
+        hideLoading();
+
+        toast(
+            "Đã tải dữ liệu Google Sheets thành công."
+        );
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        hideLoading();
+
+        $("syncText").textContent =
+            "Lỗi kết nối";
+
+        toast(
+            "LỖI: " + error.message,
+            true
+        );
+
+        console.error(
+            "Nếu lỗi là 'Permission denied' hoặc không đọc được Sheet, hãy kiểm tra quyền chia sẻ Google Sheet."
+        );
+    }
+}
+
+
+/* ==========================================================
+   LẤY MÃ LỚP
+========================================================== */
+
+function getClassCode(row){
+
+    return String(
+        getValue(row,[
+            "Malop",
+            "Mã lớp",
+            "Ma lop",
+            "Lớp",
+            "Lop",
+            "Class",
+            "ClassID"
+        ])
+    ).trim();
+}
+
+
+/* ==========================================================
+   TẠO DANH SÁCH LỚP
+========================================================== */
+
+function buildClassList(){
+
+    const select =
+        $("classSelect");
+
+    select.innerHTML = "";
+
+    const classes = [];
+
+    DATA.lop.forEach(row => {
+
+        const code =
+            getClassCode(row);
+
+        if(
+            code &&
+            !classes.includes(code)
+        ){
+            classes.push(code);
+        }
+    });
+
+    console.log(
+        "DANH SÁCH LỚP:",
+        classes
+    );
+
+    if(classes.length === 0){
+
+        select.innerHTML =
+            '<option value="">Không có lớp</option>';
+
+        currentClass = "";
+
+        renderAll();
+
+        return;
+    }
+
+    classes.forEach(code => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = code;
+
+        option.textContent =
+            code;
+
+        select.appendChild(option);
+    });
+
+    currentClass =
+        classes[0];
+
+    select.value =
+        currentClass;
+
+    updateClassInfo();
+
+    renderAll();
+}
+
+
+/* ==========================================================
+   TÌM TÊN LỚP
+========================================================== */
+
+function getClassName(code){
+
+    const row =
+        DATA.lop.find(
+            item =>
+                getClassCode(item) === code
+        );
+
+    if(!row){
+        return code;
+    }
+
+    return String(
+        getValue(row,[
+            "TenLop",
+            "Tên lớp",
+            "Ten lop",
+            "Tên",
+            "ClassName"
+        ]) || code
+    );
+}
+
+
+/* ==========================================================
+   LỌC THEO LỚP
+========================================================== */
+
+function belongsToClass(row, classCode){
+
+    if(!classCode){
+        return true;
+    }
+
+    const classValue =
+        String(
+            getValue(row,[
+                "Malop",
+                "Mã lớp",
+                "Ma lop",
+                "Lớp",
+                "Lop",
+                "Class",
+                "ClassID",
+                "TenLop",
+                "Tên lớp"
+            ])
+        ).trim();
+
+    if(!classValue){
+        return true;
+    }
+
+    return normalize(classValue) ===
+        normalize(classCode);
+}
+
+
+/* ==========================================================
+   TÌM MÃ HỌC SINH
+========================================================== */
+
+function getStudentId(row){
+
+    return String(
+        getValue(row,[
+            "MaHS",
+            "Mã HS",
+            "Ma HS",
+            "Mã học sinh",
+            "Ma hoc sinh",
+            "ID",
+            "StudentID"
+        ])
+    ).trim();
+}
+
+
+/* ==========================================================
+   TÊN HỌC SINH
+========================================================== */
+
+function getStudentName(row){
+
+    return String(
+        getValue(row,[
+            "HoTen",
+            "Họ và tên",
+            "Ho ten",
+            "Họ tên",
+            "Tên học sinh",
+            "Name",
+            "StudentName"
+        ])
+    ).trim();
+}
+
+
+/* ==========================================================
+   TÌM HỌC SINH CỦA LỚP
+========================================================== */
+
+function getStudents(){
+
+    return DATA.hocsinh.filter(
+        row => belongsToClass(
+            row,
+            currentClass
+        )
+    );
+}
+
+
+/* ==========================================================
+   CẬP NHẬT THÔNG TIN LỚP
+========================================================== */
+
+function updateClassInfo(){
+
+    const name =
+        getClassName(currentClass);
+
+    $("statClass").textContent =
+        name;
+
+    $("teacherClass").textContent =
+        name;
+}
+
+
+/* ==========================================================
+   RENDER TOÀN BỘ
+========================================================== */
+
+function renderAll(){
+
+    updateClassInfo();
+
+    renderStudents();
+
+    renderScores();
+
+    renderCompetition();
+
+    renderAttendance();
+
+    calculateStatistics();
+}
+
+
+/* ==========================================================
+   RENDER HỌC SINH
+========================================================== */
+
+function renderStudents(){
+
+    const tbody =
+        $("studentsBody");
+
+    const search =
+        normalize(
+            $("studentSearch").value
+        );
+
+    let students =
+        getStudents();
+
+    if(search){
+
+        students =
+            students.filter(row => {
+
+                const id =
+                    normalize(
+                        getStudentId(row)
+                    );
+
+                const name =
+                    normalize(
+                        getStudentName(row)
+                    );
+
+                return (
+                    id.includes(search) ||
+                    name.includes(search)
+                );
+            });
+    }
+
+    $("studentCount").textContent =
+        getStudents().length +
+        " học sinh";
+
+    $("statTotal").textContent =
+        getStudents().length;
+
+    if(students.length === 0){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6" class="empty-row">
+                    Không tìm thấy học sinh.
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+    tbody.innerHTML =
+        students.map(
+            (row,index) => {
+
+                const id =
+                    getStudentId(row);
+
+                const name =
+                    getStudentName(row);
+
+                const dob =
+                    getValue(row,[
+                        "NgaySinh",
+                        "Ngày sinh",
+                        "Ngay sinh",
+                        "DOB",
+                        "Birth"
+                    ]);
+
+                const gender =
+                    getValue(row,[
+                        "GioiTinh",
+                        "Giới tính",
+                        "Gioi tinh",
+                        "Gender"
+                    ]);
+
+                const note =
+                    getValue(row,[
+                        "GhiChu",
+                        "Ghi chú",
+                        "Ghi chu",
+                        "Note"
+                    ]) || "—";
+
+                return `
+                <tr>
+
+                    <td>${index+1}</td>
+
+                    <td>
+                        <strong>${escapeHtml(id)}</strong>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(name || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            formatDate(dob)
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            gender || "—"
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(note)}
+                    </td>
+
+                </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* ==========================================================
+   TÌM DÒNG ĐIỂM CỦA HỌC SINH
+========================================================== */
+
+function getScoreRow(studentId){
+
+    return DATA.diem.find(row => {
+
+        const id =
+            getStudentId(row);
+
+        return (
+            id &&
+            normalize(id) ===
+            normalize(studentId)
+        );
+
+    });
+}
+
+
+/* ==========================================================
+   ĐIỂM TX
+========================================================== */
+
+function getScore(row, number){
+
+    return getValue(
+        row,
+        [
+            "TX" + number,
+            "TX " + number,
+            "Điểm TX" + number,
+            "Diem TX" + number,
+            "DiemTX" + number,
+            "ĐiểmTX" + number
+        ]
+    );
+}
+
+
+/* ==========================================================
+   TÍNH ĐIỂM TRUNG BÌNH
+========================================================== */
+
+function calculateStudentAverage(row){
+
+    if(!row){
+        return NaN;
+    }
+
+    const values = [];
+
+    for(let i=1;i<=4;i++){
+
+        const value =
+            toNumber(
+                getScore(row,i)
+            );
+
+        if(Number.isFinite(value)){
+            values.push(value);
+        }
+    }
+
+    const explicit =
+        toNumber(
+            getValue(row,[
+                "DiemTB",
+                "Điểm TB",
+                "ĐiểmTB",
+                "Diem trung binh",
+                "Điểm trung bình",
+                "DTB"
+            ])
+        );
+
+    if(
+        Number.isFinite(explicit)
+    ){
+        return explicit;
+    }
+
+    if(values.length === 0){
+        return NaN;
+    }
+
+    return values.reduce(
+        (a,b)=>a+b,
+        0
+    ) / values.length;
+}
+
+
+/* ==========================================================
+   RENDER ĐIỂM
+========================================================== */
+
+function renderScores(){
+
+    const tbody =
+        $("scoresBody");
+
+    const students =
+        getStudents();
+
+    if(students.length === 0){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="8" class="empty-row">
+                    Chưa có học sinh.
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+    tbody.innerHTML =
+        students.map(
+            (student,index) => {
+
+                const id =
+                    getStudentId(student);
+
+                const scoreRow =
+                    getScoreRow(id);
+
+                const scores = [1,2,3,4]
+                    .map(n =>
+                        getScore(
+                            scoreRow,
+                            n
+                        )
+                    );
+
+                const average =
+                    calculateStudentAverage(
+                        scoreRow
+                    );
+
+                return `
+                <tr>
+
+                    <td>${index+1}</td>
+
+                    <td>
+                        ${escapeHtml(id)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            getStudentName(student)
+                        )}
+                    </td>
+
+                    <td>${displayScore(scores[0])}</td>
+
+                    <td>${displayScore(scores[1])}</td>
+
+                    <td>${displayScore(scores[2])}</td>
+
+                    <td>${displayScore(scores[3])}</td>
+
+                    <td>
+                        <strong>
+                            ${
+                                Number.isFinite(average)
+                                ? average.toFixed(2)
+                                : "—"
+                            }
+                        </strong>
+                    </td>
+
+                </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* ==========================================================
+   RENDER THI ĐUA
+========================================================== */
+
+function renderCompetition(){
+
+    const tbody =
+        $("competitionBody");
+
+    const rows =
+        DATA.thidua.filter(
+            row => belongsToClass(
+                row,
+                currentClass
+            )
+        );
+
+    if(rows.length === 0){
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="6" class="empty-row">
+                    Chưa có dữ liệu thi đua.
+                </td>
+            </tr>`;
+
+        return;
+    }
+
+    tbody.innerHTML =
+        rows.map(
+            (row,index) => {
+
+                const id =
+                    getStudentId(row);
+
+                const date =
+                    getValue(row,[
+                        "Ngay",
+                        "Ngày",
+                        "Date",
+                        "Ngay thi dua"
+                    ]);
+
+                const type =
+                    getValue(row,[
+                        "Loai",
+                        "Loại",
+                        "Type"
+                    ]);
+
+                const content =
+                    getValue(row,[
+                        "NoiDung",
+                        "Nội dung",
+                        "Noi dung",
+                        "Content"
+                    ]);
+
+                const point =
+                    getValue(row,[
+                        "Diem",
+                        "Điểm",
+                        "Point"
+                    ]);
+
+                return `
+                <tr>
+
+                    <td>${index+1}</td>
+
+                    <td>
+                        ${escapeHtml(id || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            formatDate(date)
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(type || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            content || "—"
+                        )}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${escapeHtml(
+                                point || "0"
+                            )}
+                        </strong>
+                    </td>
+
+                </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* ==========================================================
+   RENDER ĐIỂM DANH
+========================================================== */
+
+function renderAttendance(){
+
+    const tbody =
+        $("attendanceBody");
+
+    const date =
+        $("attendanceDate").value;
+
+    let rows =
+        DATA.diemdanh.filter(
+            row =>
+                belongsToClass(
+                    row,
+                    currentClass
+                )
+        );
+
+    if(date){
+
+        const selected =
+            normalizeDate(date);
+
+        const filtered =
+            rows.filter(row => {
+
+                const d =
+                    normalizeDate(
+                        getValue(row,[
+                            "Ngay",
+                            "Ngày",
+                            "Date",
+                            "Ngay diem danh",
+                            "Ngày điểm danh"
+                        ])
+                    );
+
+                return !d || d === selected;
+            });
+
+        if(filtered.length > 0){
+            rows = filtered;
+        }
+    }
+
+    const students =
+        getStudents();
+
+    if(rows.length === 0){
+
+        if(students.length === 0){
+
+            tbody.innerHTML =
+                `<tr>
+                    <td colspan="6" class="empty-row">
+                        Chưa có học sinh.
+                    </td>
+                </tr>`;
+
+            return;
+        }
+
+        rows =
+            students.map(student => ({
+                "__student":
+                    student
+            }));
+    }
+
+    tbody.innerHTML =
+        rows.map(
+            (row,index) => {
+
+                const student =
+                    row.__student;
+
+                const id =
+                    student
+                    ? getStudentId(student)
+                    : getStudentId(row);
+
+                const name =
+                    student
+                    ? getStudentName(student)
+                    : getStudentName(row);
+
+                const status =
+                    student
+                    ? "Chưa xác định"
+                    : getValue(row,[
+                        "TrangThai",
+                        "Trạng thái",
+                        "Trang thai",
+                        "Status"
+                    ]) || "Chưa xác định";
+
+                const day =
+                    student
+                    ? date
+                    : getValue(row,[
+                        "Ngay",
+                        "Ngày",
+                        "Date",
+                        "Ngay diem danh",
+                        "Ngày điểm danh"
+                    ]);
+
+                const note =
+                    student
+                    ? "—"
+                    : getValue(row,[
+                        "GhiChu",
+                        "Ghi chú",
+                        "Ghi chu",
+                        "Note"
+                    ]) || "—";
+
+                return `
+                <tr>
+
+                    <td>${index+1}</td>
+
+                    <td>
+                        ${escapeHtml(id || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(name || "—")}
+                    </td>
+
+                    <td>
+                        ${statusBadge(status)}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            formatDate(day)
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(note)}
+                    </td>
+
+                </tr>
+                `;
+            }
+        ).join("");
+}
+
+
+/* ==========================================================
+   THỐNG KÊ
+========================================================== */
+
+function calculateStatistics(){
+
+    const students =
+        getStudents();
+
+    const result = {
+        excellent:0,
+        good:0,
+        fair:0,
+        effort:0,
+        averages:[]
+    };
+
+    students.forEach(student => {
+
+        const id =
+            getStudentId(student);
+
+        const scoreRow =
+            getScoreRow(id);
+
+        const avg =
+            calculateStudentAverage(
+                scoreRow
+            );
+
+        if(!Number.isFinite(avg)){
+            return;
+        }
+
+        result.averages.push(avg);
+
+        if(avg >= 9){
+            result.excellent++;
+        }
+        else if(avg >= 8){
+            result.good++;
+        }
+        else if(avg >= 6.5){
+            result.fair++;
+        }
+        else{
+            result.effort++;
+        }
+    });
+
+    const total =
+        students.length || 1;
+
+    $("countExcellent").textContent =
+        result.excellent;
+
+    $("countGood").textContent =
+        result.good;
+
+    $("countFair").textContent =
+        result.fair;
+
+    $("countEffort").textContent =
+        result.effort;
+
+    $("barExcellent").style.width =
+        (result.excellent / total * 100) + "%";
+
+    $("barGood").style.width =
+        (result.good / total * 100) + "%";
+
+    $("barFair").style.width =
+        (result.fair / total * 100) + "%";
+
+    $("barEffort").style.width =
+        (result.effort / total * 100) + "%";
+
+
+    if(result.averages.length){
+
+        const average =
+            result.averages.reduce(
+                (a,b)=>a+b,
+                0
+            ) /
+            result.averages.length;
+
+        $("statAverage").textContent =
+            average.toFixed(1);
+
+    }
+    else{
+
+        $("statAverage").textContent =
+            "—";
+    }
+
+
+    const goodCount =
+        result.averages.filter(
+            x => x >= 8
+        ).length;
+
+    const goodPercent =
+        result.averages.length
+        ? Math.round(
+            goodCount /
+            result.averages.length *
+            100
+        )
+        : 0;
+
+    $("statGood").textContent =
+        goodPercent;
+
+
+    const attention =
+        students
+        .map(student => {
+
+            const avg =
+                calculateStudentAverage(
+                    getScoreRow(
+                        getStudentId(student)
+                    )
+                );
+
+            return {
+                name:
+                    getStudentName(student),
+                avg
+            };
+        })
+        .filter(x =>
+            Number.isFinite(x.avg) &&
+            x.avg < 6.5
+        )
+        .sort(
+            (a,b)=>a.avg-b.avg
+        );
+
+
+    if(attention.length === 0){
+
+        $("attentionBox").innerHTML =
+            "🎉 Lớp đang có tinh thần tốt!";
+    }
+    else{
+
+        $("attentionBox").innerHTML =
+            attention
+            .slice(0,3)
+            .map(x =>
+                `<div style="
+                    padding:8px 0;
+                    display:flex;
+                    justify-content:space-between;
+                    border-bottom:1px solid #edf0f5;
+                ">
+                    <strong>
+                        ${escapeHtml(x.name)}
+                    </strong>
+
+                    <span style="
+                        color:#d96b20;
+                        font-weight:700;
+                    ">
+                        ${x.avg.toFixed(1)}
+                    </span>
+                </div>`
+            )
+            .join("");
+    }
+}
+
+
+/* ==========================================================
+   BADGE ĐIỂM DANH
+========================================================== */
+
+function statusBadge(status){
+
+    const s =
+        normalize(status);
+
+    if(
+        s.includes("co mat") ||
+        s.includes("có mặt")
+    ){
+        return `
+        <span class="badge badge-green">
+            Có mặt
+        </span>`;
+    }
+
+    if(
+        s.includes("vang") ||
+        s.includes("vắng")
+    ){
+        return `
+        <span class="badge badge-red">
+            Vắng
+        </span>`;
+    }
+
+    if(
+        s.includes("di muon") ||
+        s.includes("đi muộn")
+    ){
+        return `
+        <span class="badge badge-orange">
+            Đi muộn
+        </span>`;
+    }
+
+    return `
+    <span class="badge badge-orange">
+        ${escapeHtml(status)}
+    </span>`;
+}
+
+
+/* ==========================================================
+   DISPLAY SCORE
+========================================================== */
+
+function displayScore(value){
+
+    const n =
+        toNumber(value);
+
+    if(Number.isFinite(n)){
+        return n;
+    }
+
+    return "—";
+}
+
+
+/* ==========================================================
+   DATE
+========================================================== */
+
+function formatDate(value){
+
+    if(
+        value === null ||
+        value === undefined ||
+        value === ""
+    ){
+        return "—";
+    }
+
+    const s =
+        String(value).trim();
+
+    if(
+        /^\d{4}-\d{2}-\d{2}$/.test(s)
+    ){
+
+        const [
+            y,m,d
+        ] = s.split("-");
+
+        return `${d}/${m}/${y}`;
+    }
+
+    if(
+        /^\d{2}\/\d{2}\/\d{4}$/.test(s)
+    ){
+        return s;
+    }
+
+    return s;
+}
+
+
+function normalizeDate(value){
+
+    const s =
+        String(value ?? "").trim();
+
+    if(!s){
+        return "";
+    }
+
+    let match =
+        s.match(
+            /^(\d{4})-(\d{1,2})-(\d{1,2})/
+        );
+
+    if(match){
+
+        return (
+            match[1] +
+            "-" +
+            String(match[2]).padStart(2,"0") +
+            "-" +
+            String(match[3]).padStart(2,"0")
+        );
+    }
+
+    match =
+        s.match(
+            /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
+        );
+
+    if(match){
+
+        return (
+            match[3] +
+            "-" +
+            String(match[2]).padStart(2,"0") +
+            "-" +
+            String(match[1]).padStart(2,"0")
+        );
+    }
+
+    return s;
+}
+
+
+/* ==========================================================
+   ESCAPE HTML
+========================================================== */
+
+function escapeHtml(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* ==========================================================
+   SỰ KIỆN
+========================================================== */
+
+$("classSelect")
+.addEventListener(
+    "change",
+    function(){
+
+        currentClass =
+            this.value;
+
+        updateClassInfo();
+
+        renderAll();
+    }
+);
+
+
+$("refreshBtn")
+.addEventListener(
+    "click",
+    async function(){
+
+        await loadAllData();
+    }
+);
+
+
+$("studentSearch")
+.addEventListener(
+    "input",
+    renderStudents
+);
+
+
+$("attendanceDate")
+.addEventListener(
+    "change",
+    renderAttendance
+);
+
+
+$("attendanceBtn")
+.addEventListener(
+    "click",
+    renderAttendance
+);
+
+
+$("openClassBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        $("studentSection")
+            .scrollIntoView({
+                behavior:"smooth"
+            });
+    }
+);
+
+
+document
+.querySelectorAll(".nav-item")
+.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        function(){
+
+            document
+            .querySelectorAll(".nav-item")
+            .forEach(x =>
+                x.classList.remove("active")
+            );
+
+            this.classList.add("active");
+
+            const section =
+                this.dataset.section;
+
+            if(section === "students"){
+
+                $("studentSection")
+                    .scrollIntoView({
+                        behavior:"smooth"
+                    });
+            }
+
+            if(section === "scores"){
+
+                document
+                .querySelectorAll(".data-panel")[1]
+                ?.scrollIntoView({
+                    behavior:"smooth"
+                });
+            }
+
+            if(section === "statistics"){
+
+                document
+                .querySelector(".two-col")
+                ?.scrollIntoView({
+                    behavior:"smooth"
+                });
+            }
+
+            if(section === "overview"){
+
+                window.scrollTo({
+                    top:0,
+                    behavior:"smooth"
+                });
+            }
+        }
+    );
+});
+
+
+$("addStudentBtn")
+.addEventListener(
+    "click",
+    function(){
+
+        toast(
+            "Chức năng thêm học sinh sẽ được kết nối với Google Sheets ở bước tiếp theo."
+        );
+    }
+);
+
+
+/* ==========================================================
+   KHỞI ĐỘNG
+========================================================== */
+
+setToday();
+
+loadAllData();
+
+</script>
 
 </body>
 </html>

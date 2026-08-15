@@ -1,1 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>Quản lý lớp</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <header class="header">
+        <div>
+            <h1>QUẢN LÝ LỚP</h1>
+            <p>Quản lý học sinh nhanh chóng</p>
+        </div>
+    </header>
+
+    <section class="dashboard">
+
+        <div class="stat-card">
+            <span class="stat-number" id="classCount">0</span>
+            <span class="stat-label">Lớp</span>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-number" id="studentCount">0</span>
+            <span class="stat-label">Học sinh</span>
+        </div>
+
+    </section>
+
+    <section class="section">
+
+        <label for="classSelect">
+            Chọn lớp
+        </label>
+
+        <select id="classSelect">
+            <option value="">
+                Đang tải danh sách lớp...
+            </option>
+        </select>
+
+    </section>
+
+    <section class="section">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="🔍 Tìm tên học sinh..."
+        >
+
+    </section>
+
+    <section class="section">
+
+        <div class="section-title">
+            <h2>Danh sách học sinh</h2>
+
+            <span id="selectedClass">
+                Chưa chọn lớp
+            </span>
+        </div>
+
+        <div id="loading" class="loading">
+            Đang tải dữ liệu...
+        </div>
+
+        <div id="studentList" class="student-list">
+        </div>
+
+    </section>
+
+    <div id="message" class="message"></div>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>

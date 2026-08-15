@@ -1,288 +1,493 @@
-/* ============================================================
+/* =========================================================
    TRỢ LÝ AI – QUẢN LÝ LỚP HỌC
-   KẾT NỐI GOOGLE SHEETS
-   ============================================================ */
+   app.js
+   ========================================================= */
 
 
-/* ============================================================
-   1. CẤU HÌNH GOOGLE SHEET
-   ============================================================ */
+/* =========================================================
+   1. CẤU HÌNH GOOGLE SHEETS
+   ========================================================= */
 
-const SPREADSHEET_ID =
-    "1H15_JVJ3jXKnzNxxhfk-T_0UlK0uo-aMslG5MeZo3EU";
+const CONFIG = {
+
+    spreadsheetId:
+        "1H15_JVJ3jXKnzNxxhfk-T_0UlK0uo-aMslG5MeZo3EU",
+
+    sheets: {
+
+        lop: "LOP",
+
+        hocSinh: "HOCSINH",
+
+        diem: "DIEM",
+
+        thiDua: "THIDUA",
+
+        diemDanh: "DIEMDANH"
+
+    }
+
+};
+
+
+/* =========================================================
+   2. BIẾN DỮ LIỆU
+   ========================================================= */
+
+let DATA = {
+
+    lop: [],
+
+    hocSinh: [],
+
+    diem: [],
+
+    thiDua: [],
+
+    diemDanh: []
+
+};
+
+
+let selectedClass = "";
+
+let cameraStream = null;
+
+
+/* =========================================================
+   3. HÀM TIỆN ÍCH
+   ========================================================= */
 
 
 /*
-   Tên các Sheet trong Google Sheets.
-   
-   Theo file hiện tại:
-   LOP
-   HOCSINH
-   DIEM
-   THIDUA
-   DIEMDANH
+   Chuẩn hóa tên cột.
+
+   Ví dụ:
+
+   "MaHS"       → "mahs"
+   "Mã HS"      → "mahs"
+   "Họ và tên"  → "hoten"
+   "TenLop"     → "tenlop"
 */
 
-const SHEETS = {
-    LOP: "LOP",
-    HOCSINH: "HOCSINH",
-    DIEM: "DIEM",
-    THIDUA: "THIDUA",
-    DIEMDANH: "DIEMDANH"
-};
-
-
-/* ============================================================
-   2. BIẾN DỮ LIỆU
-   ============================================================ */
-
-let data = {
-    lop: [],
-    hocSinh: [],
-    diem: [],
-    thiDua: [],
-    diemDanh: []
-};
-
-let currentClass = "";
-
-let currentDate = "";
-
-
-/* ============================================================
-   3. HÀM TIỆN ÍCH
-   ============================================================ */
-
-function normalize(value) {
+function normalizeKey(value) {
 
     if (value === null || value === undefined) {
         return "";
     }
 
     return String(value)
-        .trim()
-        .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toLowerCase();
+
 }
 
 
-function escapeHTML(value) {
+/*
+   Lấy giá trị theo nhiều tên cột có thể có.
+*/
 
-    if (value === null || value === undefined) {
+function getValue(row, names, fallback = "") {
+
+    if (!row) {
+        return fallback;
+    }
+
+    const keys = Object.keys(row);
+
+    for (const name of names) {
+
+        const target =
+            normalizeKey(name);
+
+        const found =
+            keys.find(
+                key =>
+                    normalizeKey(key) === target
+            );
+
+        if (found !== undefined) {
+
+            const value =
+                row[found];
+
+            if (
+                value !== null &&
+                value !== undefined &&
+                String(value).trim() !== ""
+            ) {
+                return value;
+            }
+
+        }
+
+    }
+
+    return fallback;
+}
+
+
+/*
+   Chuyển giá trị thành chuỗi.
+*/
+
+function text(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
         return "";
     }
 
-    return String(value)
+    return String(value).trim();
+
+}
+
+
+/*
+   Chuyển số.
+*/
+
+function numberValue(value) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return null;
+    }
+
+    const n =
+        Number(
+            String(value)
+                .replace(",", ".")
+        );
+
+    return Number.isFinite(n)
+        ? n
+        : null;
+
+}
+
+
+/*
+   Escape HTML để tránh lỗi khi dữ liệu
+   Google Sheet có ký tự đặc biệt.
+*/
+
+function escapeHTML(value) {
+
+    return String(
+        value ?? ""
+    )
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+
 }
 
 
-function findColumn(row, names) {
+/* =========================================================
+   4. THÔNG BÁO
+   ========================================================= */
 
-    const keys = Object.keys(row);
+function showAlert(message, type = "info") {
 
-    for (const name of names) {
+    const alert =
+        document.getElementById("alert");
 
-        const target = normalize(name);
-
-        const found = keys.find(key => {
-            return normalize(key) === target;
-        });
-
-        if (found) {
-            return row[found];
-        }
+    if (!alert) {
+        return;
     }
 
-    return "";
+    alert.className =
+        "alert " + type;
+
+    alert.textContent =
+        message;
+
 }
 
 
-function findColumnContains(row, names) {
+function hideAlert() {
 
-    const keys = Object.keys(row);
+    const alert =
+        document.getElementById("alert");
 
-    for (const name of names) {
-
-        const target = normalize(name);
-
-        const found = keys.find(key => {
-            return normalize(key).includes(target);
-        });
-
-        if (found) {
-            return row[found];
-        }
+    if (!alert) {
+        return;
     }
 
-    return "";
+    alert.className =
+        "alert";
+
+    alert.textContent =
+        "";
+
 }
 
 
-/* ============================================================
-   4. HIỂN THỊ LỖI
-   ============================================================ */
+/* =========================================================
+   5. LOADING
+   ========================================================= */
 
-function showError(message) {
+function showLoading() {
 
-    const box = document.getElementById("errorBox");
+    const element =
+        document.getElementById("loading");
 
-    box.style.display = "block";
+    if (element) {
+        element.classList.add("show");
+    }
 
-    box.innerHTML = `
-        <strong>❌ Lỗi tải dữ liệu</strong><br><br>
-        ${escapeHTML(message)}
-        <br><br>
-        <small>
-        Kiểm tra Google Sheet đã được chia sẻ:
-        <b>Anyone with the link → Viewer</b>
-        </small>
-    `;
 }
 
 
-function hideError() {
+function hideLoading() {
 
-    const box = document.getElementById("errorBox");
+    const element =
+        document.getElementById("loading");
 
-    box.style.display = "none";
+    if (element) {
+        element.classList.remove("show");
+    }
+
 }
 
 
-/* ============================================================
-   5. LẤY DỮ LIỆU GOOGLE SHEETS
-   ============================================================ */
+/* =========================================================
+   6. ĐỌC GOOGLE SHEETS
+   ========================================================= */
+
+
+/*
+   Google Visualization API.
+
+   Không dùng /edit.
+
+   Dạng:
+
+   /gviz/tq?tqx=out:json&sheet=LOP
+
+   Đây là cách phù hợp để đọc Sheet công khai.
+*/
+
 
 async function fetchSheet(sheetName) {
 
     const url =
-        `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+        "https://docs.google.com/spreadsheets/d/" +
+        CONFIG.spreadsheetId +
+        "/gviz/tq?" +
+        "tqx=out:json" +
+        "&headers=1" +
+        "&sheet=" +
+        encodeURIComponent(sheetName);
 
-    console.log("Đang tải Sheet:", sheetName);
 
-    const response = await fetch(url, {
-        method: "GET",
-        cache: "no-store"
-    });
+    console.log(
+        "Đang tải Sheet:",
+        sheetName
+    );
+
+    console.log(
+        "URL:",
+        url
+    );
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
+
 
     if (!response.ok) {
 
         throw new Error(
-            `Google Sheet "${sheetName}" trả về HTTP ${response.status}`
+            "Google Sheets trả về HTTP " +
+            response.status +
+            " cho Sheet " +
+            sheetName
         );
+
     }
 
-    const text = await response.text();
+
+    const raw =
+        await response.text();
+
 
     /*
        Google trả về:
 
-       /*O_o*/
        google.visualization.Query.setResponse({...});
-
-       Ta lấy phần JSON nằm trong ngoặc.
     */
 
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
+    const start =
+        raw.indexOf("(");
 
-    if (start === -1 || end === -1) {
+    const end =
+        raw.lastIndexOf(")");
+
+
+    if (
+        start === -1 ||
+        end === -1
+    ) {
+
+        console.error(
+            "Phản hồi Google:",
+            raw
+        );
 
         throw new Error(
-            `Không đọc được dữ liệu Sheet "${sheetName}".`
+            "Không đọc được dữ liệu JSON từ Google Sheets."
         );
+
     }
 
-    const jsonText = text.substring(start, end + 1);
+
+    const jsonText =
+        raw.substring(
+            start + 1,
+            end
+        );
+
 
     let json;
 
     try {
 
-        json = JSON.parse(jsonText);
+        json =
+            JSON.parse(jsonText);
 
-    } catch (error) {
+    }
+    catch (error) {
 
-        console.error("Dữ liệu Google trả về:", text);
+        console.error(
+            "JSON lỗi:",
+            jsonText
+        );
 
         throw new Error(
-            `Dữ liệu Sheet "${sheetName}" không đúng định dạng.`
+            "Google Sheets không trả về dữ liệu hợp lệ."
         );
+
     }
+
 
     if (
         !json.table ||
-        !Array.isArray(json.table.cols)
+        !json.table.cols
     ) {
 
         throw new Error(
-            `Sheet "${sheetName}" không có dữ liệu hợp lệ.`
+            "Sheet " +
+            sheetName +
+            " không có dữ liệu."
         );
+
     }
 
-    const columns = json.table.cols.map(
-        (col, index) => {
 
-            return (
-                col.label ||
-                col.id ||
-                `Cột ${index + 1}`
+    const columns =
+        json.table.cols.map(
+            (column, index) => {
+
+                return (
+                    column.label ||
+                    column.id ||
+                    "Column" + index
+                );
+
+            }
+        );
+
+
+    const rows =
+        json.table.rows || [];
+
+
+    const result =
+        rows.map(row => {
+
+            const object = {};
+
+            columns.forEach(
+                (column, index) => {
+
+                    const cell =
+                        row.c &&
+                        row.c[index];
+
+                    object[column] =
+                        cell
+                            ? (
+                                cell.f ??
+                                cell.v ??
+                                ""
+                            )
+                            : "";
+
+                }
             );
-        }
-    );
 
-    const rows = [];
+            return object;
 
-    if (json.table.rows) {
-
-        json.table.rows.forEach(row => {
-
-            const item = {};
-
-            columns.forEach((column, index) => {
-
-                const cell =
-                    row.c &&
-                    row.c[index];
-
-                item[column] =
-                    cell && cell.v !== null
-                        ? cell.v
-                        : "";
-            });
-
-            rows.push(item);
         });
-    }
+
 
     console.log(
-        `Sheet ${sheetName}:`,
-        rows.length,
-        "dòng"
+        "Sheet",
+        sheetName,
+        ":",
+        result
     );
 
-    return rows;
+
+    return result;
+
 }
 
 
-/* ============================================================
-   6. TẢI TOÀN BỘ DỮ LIỆU
-   ============================================================ */
+/* =========================================================
+   7. TẢI TOÀN BỘ DỮ LIỆU
+   ========================================================= */
 
 async function loadAllData() {
 
-    hideError();
+    showLoading();
 
-    console.log("=================================");
-    console.log("ĐANG TẢI TOÀN BỘ DỮ LIỆU");
-    console.log("=================================");
+    hideAlert();
+
 
     try {
+
+        console.log(
+            "================================="
+        );
+
+        console.log(
+            "ĐANG TẢI TOÀN BỘ DỮ LIỆU"
+        );
+
+        console.log(
+            "================================="
+        );
+
 
         const [
             lop,
@@ -292,385 +497,428 @@ async function loadAllData() {
             diemDanh
         ] = await Promise.all([
 
-            fetchSheet(SHEETS.LOP),
+            fetchSheet(
+                CONFIG.sheets.lop
+            ),
 
-            fetchSheet(SHEETS.HOCSINH),
+            fetchSheet(
+                CONFIG.sheets.hocSinh
+            ),
 
-            fetchSheet(SHEETS.DIEM),
+            fetchSheet(
+                CONFIG.sheets.diem
+            ),
 
-            fetchSheet(SHEETS.THIDUA),
+            fetchSheet(
+                CONFIG.sheets.thiDua
+            ),
 
-            fetchSheet(SHEETS.DIEMDANH)
+            fetchSheet(
+                CONFIG.sheets.diemDanh
+            )
 
         ]);
 
-        data.lop = lop;
-        data.hocSinh = hocSinh;
-        data.diem = diem;
-        data.thiDua = thiDua;
-        data.diemDanh = diemDanh;
 
-        console.log("Dữ liệu lớp:", data.lop);
-        console.log("Dữ liệu học sinh:", data.hocSinh);
-        console.log("Dữ liệu điểm:", data.diem);
-        console.log("Dữ liệu thi đua:", data.thiDua);
-        console.log("Dữ liệu điểm danh:", data.diemDanh);
+        DATA.lop =
+            lop || [];
+
+        DATA.hocSinh =
+            hocSinh || [];
+
+        DATA.diem =
+            diem || [];
+
+        DATA.thiDua =
+            thiDua || [];
+
+        DATA.diemDanh =
+            diemDanh || [];
+
+
+        console.log(
+            "Dữ liệu lớp:",
+            DATA.lop
+        );
+
+        console.log(
+            "Dữ liệu học sinh:",
+            DATA.hocSinh
+        );
+
+        console.log(
+            "Dữ liệu điểm:",
+            DATA.diem
+        );
+
+        console.log(
+            "Dữ liệu thi đua:",
+            DATA.thiDua
+        );
+
+        console.log(
+            "Dữ liệu điểm danh:",
+            DATA.diemDanh
+        );
+
 
         console.log(
             "Số lớp:",
-            data.lop.length
+            DATA.lop.length
         );
 
         console.log(
             "Số học sinh:",
-            data.hocSinh.length
+            DATA.hocSinh.length
         );
 
-        buildClassList();
 
-        if (!currentClass) {
+        fillClassSelect();
 
-            const classes = getClassNames();
-
-            if (classes.length > 0) {
-                currentClass = classes[0];
-            }
-        }
-
-        const select =
-            document.getElementById("classSelect");
-
-        if (select && currentClass) {
-            select.value = currentClass;
-        }
 
         renderAll();
 
-        console.log(
-            "========== ĐÃ TẢI XONG TOÀN BỘ DỮ LIỆU =========="
+
+        hideLoading();
+
+
+        showAlert(
+            "Đã tải dữ liệu thành công.",
+            "success"
         );
 
-    } catch (error) {
 
-        console.error(error);
+        setTimeout(
+            hideAlert,
+            2500
+        );
 
-        showError(error.message);
-
-        document.getElementById("studentTable").innerHTML =
-            `<div class="empty">Không tải được dữ liệu.</div>`;
-
-        document.getElementById("scoreTable").innerHTML =
-            `<div class="empty">Không tải được dữ liệu.</div>`;
-
-        document.getElementById("competitionTable").innerHTML =
-            `<div class="empty">Không tải được dữ liệu.</div>`;
-
-        document.getElementById("attendanceTable").innerHTML =
-            `<div class="empty">Không tải được dữ liệu.</div>`;
     }
+    catch (error) {
+
+        console.error(
+            "LỖI TẢI DỮ LIỆU:",
+            error
+        );
+
+
+        hideLoading();
+
+
+        showAlert(
+            "❌ Lỗi tải dữ liệu: " +
+            error.message,
+            "error"
+        );
+
+    }
+
 }
 
 
-/* ============================================================
-   7. XÁC ĐỊNH DANH SÁCH LỚP
-   ============================================================ */
+/* =========================================================
+   8. DANH SÁCH LỚP
+   ========================================================= */
 
-function getClassNames() {
-
-    const result = [];
-
-    function addClass(value) {
-
-        if (!value) return;
-
-        const name = String(value).trim();
-
-        if (!name) return;
-
-        if (!result.includes(name)) {
-
-            result.push(name);
-        }
-    }
-
-
-    /* Sheet LOP */
-
-    data.lop.forEach(row => {
-
-        const className =
-            findColumn(
-                row,
-                [
-                    "Lớp",
-                    "lop",
-                    "Tên lớp",
-                    "Ten lop",
-                    "class",
-                    "Class"
-                ]
-            );
-
-        addClass(className);
-
-    });
-
-
-    /* Nếu Sheet LOP không có tên lớp,
-       lấy từ HOCSINH */
-
-    if (result.length === 0) {
-
-        data.hocSinh.forEach(row => {
-
-            const className =
-                findColumn(
-                    row,
-                    [
-                        "Lớp",
-                        "lop",
-                        "Tên lớp",
-                        "Ten lop",
-                        "class",
-                        "Class"
-                    ]
-                );
-
-            addClass(className);
-
-        });
-    }
-
-
-    /* Nếu vẫn không có,
-       lấy từ điểm danh */
-
-    if (result.length === 0) {
-
-        data.diemDanh.forEach(row => {
-
-            const className =
-                findColumn(
-                    row,
-                    [
-                        "Lớp",
-                        "lop",
-                        "Tên lớp",
-                        "Ten lop",
-                        "class",
-                        "Class"
-                    ]
-                );
-
-            addClass(className);
-
-        });
-    }
-
-
-    return result;
-}
-
-
-/* ============================================================
-   8. TẠO DANH SÁCH LỚP TRÊN GIAO DIỆN
-   ============================================================ */
-
-function buildClassList() {
+function fillClassSelect() {
 
     const select =
-        document.getElementById("classSelect");
+        document.getElementById(
+            "classSelect"
+        );
 
-    const classes =
-        getClassNames();
-
-    select.innerHTML = "";
-
-    if (classes.length === 0) {
-
-        select.innerHTML =
-            `<option value="">Không tìm thấy lớp</option>`;
-
-        currentClass = "";
-
+    if (!select) {
         return;
     }
 
 
-    classes.forEach(className => {
-
-        const option =
-            document.createElement("option");
-
-        option.value = className;
-
-        option.textContent = className;
-
-        select.appendChild(option);
-
-        console.log(
-            "Đã thêm lớp:",
-            className
-        );
-    });
+    select.innerHTML =
+        "";
 
 
     if (
-        currentClass &&
-        classes.includes(currentClass)
+        !DATA.lop ||
+        DATA.lop.length === 0
     ) {
 
-        select.value = currentClass;
+        select.innerHTML =
+            `
+            <option value="">
+                Không có lớp
+            </option>
+            `;
 
-    } else {
+        return;
 
-        currentClass = classes[0];
-
-        select.value = currentClass;
     }
-}
-
-
-/* ============================================================
-   9. LẤY THÔNG TIN HỌC SINH
-   ============================================================ */
-
-function getStudentId(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "mã hs",
-            "ma hs",
-            "mahs",
-            "mã học sinh",
-            "ma hoc sinh",
-            "student id",
-            "id"
-        ]
-    );
-}
-
-
-function getStudentName(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "họ và tên",
-            "ho va ten",
-            "họ tên",
-            "ho ten",
-            "tên học sinh",
-            "ten hoc sinh",
-            "name"
-        ]
-    );
-}
-
-
-function getStudentClass(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "lớp",
-            "lop",
-            "class"
-        ]
-    );
-}
-
-
-/* ============================================================
-   10. LỌC HỌC SINH THEO LỚP
-   ============================================================ */
-
-function getStudentsByClass() {
-
-    let students =
-        data.hocSinh.filter(row => {
-
-            const className =
-                getStudentClass(row);
-
-            return normalize(className) ===
-                normalize(currentClass);
-        });
 
 
     /*
-       Nếu HOCSINH không có cột Lớp,
-       thử lấy danh sách mã HS từ Sheet LOP.
+       Loại bỏ lớp trùng.
     */
 
-    if (
-        students.length === 0 &&
-        currentClass
-    ) {
-
-        const classRows =
-            data.lop.filter(row => {
-
-                const className =
-                    findColumnContains(
-                        row,
-                        [
-                            "lớp",
-                            "lop",
-                            "class"
-                        ]
-                    );
-
-                return normalize(className) ===
-                    normalize(currentClass);
-            });
+    const classes = [];
 
 
-        const ids =
-            new Set(
-                classRows
-                    .map(row => getStudentId(row))
-                    .filter(Boolean)
-                    .map(normalize)
+    DATA.lop.forEach(row => {
+
+        const maLop =
+            text(
+                getValue(
+                    row,
+                    [
+                        "Malop",
+                        "MaLop",
+                        "Mã lớp",
+                        "malop"
+                    ]
+                )
             );
 
 
-        if (ids.size > 0) {
+        const tenLop =
+            text(
+                getValue(
+                    row,
+                    [
+                        "TenLop",
+                        "Tên lớp",
+                        "Lop",
+                        "Lớp",
+                        "tenlop"
+                    ]
+                )
+            );
 
-            students =
-                data.hocSinh.filter(row => {
 
-                    return ids.has(
-                        normalize(
-                            getStudentId(row)
-                        )
-                    );
-                });
+        /*
+           Nếu TenLop rỗng,
+           dùng Malop.
+        */
+
+        const display =
+            tenLop ||
+            maLop ||
+            "Lớp chưa đặt tên";
+
+
+        if (!classes.some(
+            x =>
+                x.value ===
+                (maLop || display)
+        )) {
+
+            classes.push({
+
+                value:
+                    maLop || display,
+
+                name:
+                    display
+
+            });
+
         }
+
+
+        console.log(
+            "Đã thêm lớp:",
+            display,
+            "| Mã:",
+            maLop
+        );
+
+    });
+
+
+    classes.forEach(item => {
+
+        const option =
+            document.createElement(
+                "option"
+            );
+
+        option.value =
+            item.value;
+
+        option.textContent =
+            item.name;
+
+        select.appendChild(
+            option
+        );
+
+    });
+
+
+    /*
+       Chọn lớp đầu tiên.
+    */
+
+    if (classes.length > 0) {
+
+        selectedClass =
+            classes[0].value;
+
+        select.value =
+            selectedClass;
+
     }
 
 
-    return students;
+    console.log(
+        "Danh sách lớp cuối cùng:",
+        classes
+    );
+
 }
 
 
-/* ============================================================
+/* =========================================================
+   9. LẤY TÊN LỚP
+   ========================================================= */
+
+function getClassName(classCode) {
+
+    const row =
+        DATA.lop.find(item => {
+
+            const ma =
+                text(
+                    getValue(
+                        item,
+                        [
+                            "Malop",
+                            "MaLop",
+                            "Mã lớp"
+                        ]
+                    )
+                );
+
+            const ten =
+                text(
+                    getValue(
+                        item,
+                        [
+                            "TenLop",
+                            "Tên lớp",
+                            "Lop",
+                            "Lớp"
+                        ]
+                    )
+                );
+
+            return (
+                ma === classCode ||
+                ten === classCode
+            );
+
+        });
+
+
+    if (!row) {
+        return classCode;
+    }
+
+
+    return (
+        text(
+            getValue(
+                row,
+                [
+                    "TenLop",
+                    "Tên lớp",
+                    "Lop",
+                    "Lớp"
+                ]
+            )
+        ) ||
+        classCode
+    );
+
+}
+
+
+/* =========================================================
+   10. LỌC HỌC SINH THEO LỚP
+   ========================================================= */
+
+function getStudentsByClass() {
+
+    const classCode =
+        selectedClass;
+
+
+    if (!classCode) {
+        return [];
+    }
+
+
+    return DATA.hocSinh.filter(
+        student => {
+
+            const maLop =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "MaLop",
+                            "Malop",
+                            "Mã lớp"
+                        ]
+                    )
+                );
+
+
+            const lop =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "TenLop",
+                            "Lop",
+                            "Lớp"
+                        ]
+                    )
+                );
+
+
+            return (
+                maLop === classCode ||
+                lop === classCode
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
    11. TÌM KIẾM HỌC SINH
-   ============================================================ */
+   ========================================================= */
 
 function getFilteredStudents() {
 
     const students =
         getStudentsByClass();
 
+
     const input =
         document.getElementById(
             "studentSearch"
         );
 
+
+    if (!input) {
+        return students;
+    }
+
+
     const keyword =
-        normalize(input.value);
+        text(
+            input.value
+        ).toLowerCase();
 
 
     if (!keyword) {
@@ -678,1151 +926,576 @@ function getFilteredStudents() {
     }
 
 
-    return students.filter(row => {
+    return students.filter(
+        student => {
 
-        const id =
-            normalize(getStudentId(row));
+            const maHS =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "MaHS",
+                            "Mã HS",
+                            "Mahs"
+                        ]
+                    )
+                ).toLowerCase();
 
-        const name =
-            normalize(getStudentName(row));
 
-        return (
-            id.includes(keyword) ||
-            name.includes(keyword)
-        );
-    });
+            const hoTen =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "HoTen",
+                            "Họ tên",
+                            "Họ và tên",
+                            "Hoten"
+                        ]
+                    )
+                ).toLowerCase();
+
+
+            return (
+                maHS.includes(keyword) ||
+                hoTen.includes(keyword)
+            );
+
+        }
+    );
+
 }
 
 
-/* ============================================================
-   12. HIỂN THỊ DANH SÁCH HỌC SINH
-   ============================================================ */
+/* =========================================================
+   12. HIỂN THỊ HỌC SINH
+   ========================================================= */
 
 function renderStudents() {
+
+    const tbody =
+        document.getElementById(
+            "studentTableBody"
+        );
+
+
+    if (!tbody) {
+        return;
+    }
+
 
     const students =
         getFilteredStudents();
 
-    const container =
-        document.getElementById(
-            "studentTable"
-        );
+
+    tbody.innerHTML =
+        "";
 
 
     if (students.length === 0) {
 
-        container.innerHTML =
-            `<div class="empty">
-                Không tìm thấy học sinh.
-             </div>`;
+        tbody.innerHTML =
+            `
+            <tr>
+                <td
+                    colspan="6"
+                    class="empty">
+
+                    Không tìm thấy học sinh.
+
+                </td>
+            </tr>
+            `;
 
         return;
+
     }
 
 
-    let html = `
-        <table>
-            <thead>
+    students.forEach(
+        (student, index) => {
+
+            const stt =
+                getValue(
+                    student,
+                    [
+                        "STT",
+                        "Stt"
+                    ],
+                    index + 1
+                );
+
+
+            const maHS =
+                getValue(
+                    student,
+                    [
+                        "MaHS",
+                        "Mã HS",
+                        "Mahs"
+                    ]
+                );
+
+
+            const hoTen =
+                getValue(
+                    student,
+                    [
+                        "HoTen",
+                        "Họ tên",
+                        "Họ và tên",
+                        "Hoten"
+                    ]
+                );
+
+
+            const ngaySinh =
+                getValue(
+                    student,
+                    [
+                        "NgaySinh",
+                        "Ngày sinh"
+                    ]
+                );
+
+
+            const gioiTinh =
+                getValue(
+                    student,
+                    [
+                        "Gioitinh",
+                        "GioiTinh",
+                        "Giới tính"
+                    ]
+                );
+
+
+            const ghiChu =
+                getValue(
+                    student,
+                    [
+                        "Ghichu",
+                        "GhiChu",
+                        "Ghi chú"
+                    ]
+                );
+
+
+            tbody.innerHTML +=
+                `
                 <tr>
-                    <th>STT</th>
-                    <th>Mã HS</th>
-                    <th>Họ và tên</th>
-                    <th>Lớp</th>
+
+                    <td>
+                        ${escapeHTML(stt)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(maHS)}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(hoTen || "—")}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${escapeHTML(ngaySinh || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(gioiTinh || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(ghiChu || "—")}
+                    </td>
+
                 </tr>
-            </thead>
-            <tbody>
-    `;
+                `;
 
-
-    students.forEach((student, index) => {
-
-        html += `
-            <tr>
-                <td>${index + 1}</td>
-                <td>
-                    ${escapeHTML(
-                        getStudentId(student)
-                    )}
-                </td>
-                <td>
-                    ${escapeHTML(
-                        getStudentName(student)
-                    )}
-                </td>
-                <td>
-                    ${escapeHTML(
-                        getStudentClass(student) ||
-                        currentClass
-                    )}
-                </td>
-            </tr>
-        `;
-    });
-
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-
-    container.innerHTML = html;
-}
-
-
-/* ============================================================
-   13. LẤY ĐIỂM
-   ============================================================ */
-
-function getScoreStudentId(row) {
-
-    return getStudentId(row);
-}
-
-
-function getSubject(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "môn",
-            "mon",
-            "môn học",
-            "mon hoc",
-            "subject"
-        ]
+        }
     );
+
 }
 
 
-function getScore(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "điểm",
-            "diem",
-            "điểm số",
-            "diem so",
-            "score"
-        ]
-    );
-}
-
-
-/* ============================================================
-   14. HIỂN THỊ ĐIỂM
-   ============================================================ */
+/* =========================================================
+   13. HIỂN THỊ ĐIỂM
+   ========================================================= */
 
 function renderScores() {
 
-    const students =
-        getStudentsByClass();
-
-    const studentIds =
-        new Set(
-            students
-                .map(getStudentId)
-                .filter(Boolean)
-                .map(normalize)
-        );
-
-
-    let scores =
-        data.diem.filter(row => {
-
-            const id =
-                normalize(
-                    getScoreStudentId(row)
-                );
-
-            return (
-                id &&
-                studentIds.has(id)
-            );
-        });
-
-
-    /*
-       Nếu Sheet DIEM có cột lớp,
-       hỗ trợ lọc trực tiếp.
-    */
-
-    if (scores.length === 0) {
-
-        scores =
-            data.diem.filter(row => {
-
-                const lop =
-                    findColumnContains(
-                        row,
-                        [
-                            "lớp",
-                            "lop",
-                            "class"
-                        ]
-                    );
-
-                if (!lop) return false;
-
-                return normalize(lop) ===
-                    normalize(currentClass);
-            });
-    }
-
-
-    const container =
+    const tbody =
         document.getElementById(
-            "scoreTable"
+            "scoreTableBody"
         );
 
 
-    if (scores.length === 0) {
-
-        /*
-           Nếu chưa có dữ liệu điểm,
-           vẫn hiển thị danh sách học sinh.
-        */
-
-        let html = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>STT</th>
-                        <th>Mã HS</th>
-                        <th>Họ và tên</th>
-                        <th>Môn</th>
-                        <th>Điểm</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-
-        students.forEach((student, index) => {
-
-            html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${escapeHTML(
-                        getStudentId(student)
-                    )}</td>
-                    <td>${escapeHTML(
-                        getStudentName(student) || "—"
-                    )}</td>
-                    <td>—</td>
-                    <td>—</td>
-                </tr>
-            `;
-        });
-
-
-        html += `
-                </tbody>
-            </table>
-        `;
-
-        container.innerHTML = html;
-
+    if (!tbody) {
         return;
     }
 
 
-    let html = `
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Mã HS</th>
-                    <th>Họ và tên</th>
-                    <th>Môn</th>
-                    <th>Điểm</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-
-    scores.forEach((row, index) => {
-
-        const id =
-            getScoreStudentId(row);
-
-        const student =
-            students.find(
-                s =>
-                    normalize(
-                        getStudentId(s)
-                    ) === normalize(id)
-            );
-
-
-        html += `
-            <tr>
-                <td>${index + 1}</td>
-
-                <td>
-                    ${escapeHTML(id)}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        student
-                            ? getStudentName(student)
-                            : "—"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        getSubject(row) || "—"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        getScore(row) || "—"
-                    )}
-                </td>
-            </tr>
-        `;
-    });
-
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-
-    container.innerHTML = html;
-}
-
-
-/* ============================================================
-   15. THI ĐUA
-   ============================================================ */
-
-function getCompetitionClass(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "lớp",
-            "lop",
-            "class"
-        ]
-    );
-}
-
-
-function getCompetitionScore(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "điểm thi đua",
-            "diem thi dua",
-            "điểm",
-            "diem",
-            "score"
-        ]
-    );
-}
-
-
-function getCompetitionRank(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "xếp hạng",
-            "xep hang",
-            "hạng",
-            "hang",
-            "rank"
-        ]
-    );
-}
-
-
-/* ============================================================
-   16. HIỂN THỊ THI ĐUA
-   ============================================================ */
-
-function renderCompetition() {
-
-    let rows =
-        data.thiDua.filter(row => {
-
-            const className =
-                getCompetitionClass(row);
-
-            return normalize(className) ===
-                normalize(currentClass);
-        });
-
-
-    /*
-       Nếu Sheet THIDUA không có dữ liệu
-       của lớp hiện tại thì thử tìm tất cả.
-    */
-
-    if (rows.length === 0) {
-
-        rows = data.thiDua;
-    }
-
-
-    const container =
-        document.getElementById(
-            "competitionTable"
-        );
-
-
-    if (rows.length === 0) {
-
-        container.innerHTML =
-            `<div class="empty">
-                Chưa có dữ liệu thi đua.
-             </div>`;
-
-        return;
-    }
-
-
-    let html = `
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Lớp</th>
-                    <th>Điểm thi đua</th>
-                    <th>Xếp hạng</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-
-    rows.forEach((row, index) => {
-
-        html += `
-            <tr>
-                <td>${index + 1}</td>
-
-                <td>
-                    ${escapeHTML(
-                        getCompetitionClass(row) ||
-                        currentClass
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        getCompetitionScore(row) || "—"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        getCompetitionRank(row) || "—"
-                    )}
-                </td>
-            </tr>
-        `;
-    });
-
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-
-    container.innerHTML = html;
-}
-
-
-/* ============================================================
-   17. ĐIỂM DANH
-   ============================================================ */
-
-function getAttendanceStatus(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "trạng thái",
-            "trang thai",
-            "status",
-            "tình trạng",
-            "tinh trang"
-        ]
-    );
-}
-
-
-function getAttendanceDate(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "ngày",
-            "ngay",
-            "ngày điểm danh",
-            "ngay diem danh",
-            "date"
-        ]
-    );
-}
-
-
-function getAttendanceClass(row) {
-
-    return findColumnContains(
-        row,
-        [
-            "lớp",
-            "lop",
-            "class"
-        ]
-    );
-}
-
-
-/* ============================================================
-   18. CHUẨN HÓA NGÀY
-   ============================================================ */
-
-function normalizeDate(value) {
-
-    if (!value) {
-        return "";
-    }
-
-
-    let text =
-        String(value).trim();
-
-
-    /*
-       dd/mm/yyyy
-    */
-
-    let match =
-        text.match(
-            /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
-        );
-
-
-    if (match) {
-
-        return (
-            match[3] +
-            "-" +
-            match[2].padStart(2, "0") +
-            "-" +
-            match[1].padStart(2, "0")
-        );
-    }
-
-
-    /*
-       yyyy-mm-dd
-    */
-
-    match =
-        text.match(
-            /^(\d{4})-(\d{1,2})-(\d{1,2})$/
-        );
-
-
-    if (match) {
-
-        return (
-            match[1] +
-            "-" +
-            match[2].padStart(2, "0") +
-            "-" +
-            match[3].padStart(2, "0")
-        );
-    }
-
-
-    /*
-       Google Sheets đôi khi trả:
-       Date(2026,7,15)
-    */
-
-    match =
-        text.match(
-            /Date\((\d+),(\d+),(\d+)\)/
-        );
-
-
-    if (match) {
-
-        return (
-            match[1] +
-            "-" +
-            String(
-                Number(match[2]) + 1
-            ).padStart(2, "0") +
-            "-" +
-            String(
-                match[3]
-            ).padStart(2, "0")
-        );
-    }
-
-
-    return text;
-}
-
-
-/* ============================================================
-   19. TRẠNG THÁI ĐIỂM DANH
-   ============================================================ */
-
-function statusType(status) {
-
-    const value =
-        normalize(status);
-
-
-    if (
-        value.includes("co mat") ||
-        value.includes("present") ||
-        value === "có"
-    ) {
-
-        return "present";
-    }
-
-
-    if (
-        value.includes("di muon") ||
-        value.includes("muon") ||
-        value.includes("late")
-    ) {
-
-        return "late";
-    }
-
-
-    if (
-        value.includes("vang") ||
-        value.includes("absent") ||
-        value.includes("nghi")
-    ) {
-
-        return "absent";
-    }
-
-
-    return "unknown";
-}
-
-
-function statusBadge(status) {
-
-    const type =
-        statusType(status);
-
-
-    let className =
-        "badge badge-unknown";
-
-
-    if (type === "present") {
-        className =
-            "badge badge-present";
-    }
-
-    if (type === "late") {
-        className =
-            "badge badge-late";
-    }
-
-    if (type === "absent") {
-        className =
-            "badge badge-absent";
-    }
-
-
-    return `
-        <span class="${className}">
-            ${escapeHTML(status || "Chưa xác định")}
-        </span>
-    `;
-}
-
-
-/* ============================================================
-   20. LỌC ĐIỂM DANH
-   ============================================================ */
-
-function getAttendanceRows() {
-
     const students =
-        getStudentsByClass();
+        getFilteredStudents();
 
 
-    const studentIds =
-        new Set(
-            students
-                .map(getStudentId)
-                .filter(Boolean)
-                .map(normalize)
-        );
-
-
-    let rows =
-        data.diemDanh.filter(row => {
-
-            const className =
-                getAttendanceClass(row);
-
-
-            const id =
-                normalize(
-                    getStudentId(row)
-                );
-
-
-            const classOK =
-                className
-                    ? normalize(className) ===
-                      normalize(currentClass)
-                    : true;
-
-
-            const studentOK =
-                id
-                    ? studentIds.has(id)
-                    : false;
-
-
-            return classOK && studentOK;
-        });
-
-
-    /*
-       Lọc ngày.
-       Chỉ lọc nếu Sheet có cột ngày
-       và người dùng đã chọn ngày.
-    */
-
-    if (currentDate) {
-
-        const hasDateColumn =
-            rows.some(
-                row =>
-                    getAttendanceDate(row) !== ""
-            );
-
-
-        if (hasDateColumn) {
-
-            rows =
-                rows.filter(row => {
-
-                    return (
-                        normalizeDate(
-                            getAttendanceDate(row)
-                        ) === currentDate
-                    );
-                });
-        }
-    }
-
-
-    return rows;
-}
-
-
-/* ============================================================
-   21. HIỂN THỊ ĐIỂM DANH
-   ============================================================ */
-
-function renderAttendance() {
-
-    const students =
-        getStudentsByClass();
-
-    const rows =
-        getAttendanceRows();
-
-
-    const container =
-        document.getElementById(
-            "attendanceTable"
-        );
-
-
-    /*
-       Tạo Map để tìm trạng thái
-       theo mã học sinh.
-    */
-
-    const attendanceMap =
-        new Map();
-
-
-    rows.forEach(row => {
-
-        const id =
-            normalize(
-                getStudentId(row)
-            );
-
-        if (id) {
-
-            attendanceMap.set(
-                id,
-                getAttendanceStatus(row)
-            );
-        }
-    });
-
-
-    let html = `
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Mã HS</th>
-                    <th>Họ tên</th>
-                    <th>Trạng thái</th>
-                    <th>Ngày</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+    tbody.innerHTML =
+        "";
 
 
     if (students.length === 0) {
 
-        container.innerHTML =
-            `<div class="empty">
-                Không có học sinh.
-             </div>`;
+        tbody.innerHTML =
+            `
+            <tr>
+                <td
+                    colspan="8"
+                    class="empty">
 
+                    Chưa có dữ liệu điểm.
+
+                </td>
+            </tr>
+            `;
+
+        return;
+
+    }
+
+
+    students.forEach(
+        (student, index) => {
+
+            const maHS =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "MaHS",
+                            "Mã HS"
+                        ]
+                    )
+                );
+
+
+            const score =
+                DATA.diem.find(
+                    item => {
+
+                        const itemMaHS =
+                            text(
+                                getValue(
+                                    item,
+                                    [
+                                        "MaHS",
+                                        "Mã HS"
+                                    ]
+                                )
+                            );
+
+                        return (
+                            itemMaHS === maHS
+                        );
+
+                    }
+                );
+
+
+            const tx1 =
+                score
+                    ? getValue(
+                        score,
+                        ["TX1"]
+                    )
+                    : "";
+
+
+            const tx2 =
+                score
+                    ? getValue(
+                        score,
+                        ["TX2"]
+                    )
+                    : "";
+
+
+            const tx3 =
+                score
+                    ? getValue(
+                        score,
+                        ["TX3"]
+                    )
+                    : "";
+
+
+            const tx4 =
+                score
+                    ? getValue(
+                        score,
+                        ["TX4"]
+                    )
+                    : "";
+
+
+            const values = [
+                tx1,
+                tx2,
+                tx3,
+                tx4
+            ]
+                .map(
+                    numberValue
+                )
+                .filter(
+                    v =>
+                        v !== null
+                );
+
+
+            let average = "—";
+
+
+            if (values.length > 0) {
+
+                const sum =
+                    values.reduce(
+                        (a, b) =>
+                            a + b,
+                        0
+                    );
+
+                average =
+                    (
+                        sum /
+                        values.length
+                    ).toFixed(2);
+
+            }
+
+
+            const hoTen =
+                getValue(
+                    student,
+                    [
+                        "HoTen",
+                        "Họ tên",
+                        "Họ và tên"
+                    ]
+                );
+
+
+            tbody.innerHTML +=
+                `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(maHS)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(hoTen || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(tx1 || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(tx2 || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(tx3 || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(tx4 || "—")}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${average}
+                        </strong>
+                    </td>
+
+                </tr>
+                `;
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   14. HIỂN THỊ THI ĐUA
+   ========================================================= */
+
+function renderCompetition() {
+
+    const tbody =
+        document.getElementById(
+            "competitionTableBody"
+        );
+
+
+    if (!tbody) {
         return;
     }
 
 
-    students.forEach((student, index) => {
+    tbody.innerHTML =
+        "";
+
+
+    const classData =
+        DATA.thiDua.filter(
+            item => {
+
+                const maLop =
+                    text(
+                        getValue(
+                            item,
+                            [
+                                "MaLop",
+                                "Malop",
+                                "Mã lớp"
+                            ]
+                        )
+                    );
+
+                return (
+                    !selectedClass ||
+                    maLop === selectedClass
+                );
 
-        const id =
-            getStudentId(student);
-
-        const key =
-            normalize(id);
-
-
-        const status =
-            attendanceMap.get(key) ||
-            "Chưa xác định";
-
-
-        html += `
-            <tr>
-
-                <td>
-                    ${index + 1}
-                </td>
-
-                <td>
-                    ${escapeHTML(id)}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        getStudentName(student)
-                    )}
-                </td>
-
-                <td>
-                    ${statusBadge(status)}
-                </td>
-
-                <td>
-                    ${formatDisplayDate(
-                        currentDate
-                    )}
-                </td>
-
-            </tr>
-        `;
-    });
-
-
-    html += `
-            </tbody>
-        </table>
-    `;
-
-
-    container.innerHTML = html;
-
-
-    updateStatistics(
-        students,
-        attendanceMap
-    );
-}
-
-
-/* ============================================================
-   22. HIỂN THỊ NGÀY
-   ============================================================ */
-
-function formatDisplayDate(value) {
-
-    if (!value) {
-        return "";
-    }
-
-
-    const match =
-        value.match(
-            /^(\d{4})-(\d{2})-(\d{2})$/
-        );
-
-
-    if (!match) {
-        return value;
-    }
-
-
-    return (
-        match[3] +
-        "/" +
-        match[2] +
-        "/" +
-        match[1]
-    );
-}
-
-
-/* ============================================================
-   23. THỐNG KÊ
-   ============================================================ */
-
-function updateStatistics(
-    students,
-    attendanceMap
-) {
-
-    let present = 0;
-    let late = 0;
-    let absent = 0;
-    let unknown = 0;
-
-
-    students.forEach(student => {
-
-        const id =
-            normalize(
-                getStudentId(student)
-            );
-
-
-        const status =
-            attendanceMap.get(id) ||
-            "";
-
-
-        const type =
-            statusType(status);
-
-
-        if (type === "present") {
-            present++;
-        }
-
-        else if (type === "late") {
-            late++;
-        }
-
-        else if (type === "absent") {
-            absent++;
-        }
-
-        else {
-            unknown++;
-        }
-    });
-
-
-    document.getElementById(
-        "totalStudents"
-    ).textContent =
-        students.length;
-
-
-    document.getElementById(
-        "presentCount"
-    ).textContent =
-        present;
-
-
-    document.getElementById(
-        "lateCount"
-    ).textContent =
-        late;
-
-
-    document.getElementById(
-        "absentCount"
-    ).textContent =
-        absent;
-
-
-    document.getElementById(
-        "unknownCount"
-    ).textContent =
-        unknown;
-}
-
-
-/* ============================================================
-   24. HIỂN THỊ TOÀN BỘ
-   ============================================================ */
-
-function renderAll() {
-
-    console.log(
-        "Hiển thị dữ liệu lớp:",
-        currentClass
-    );
-
-    renderStudents();
-
-    renderScores();
-
-    renderCompetition();
-
-    renderAttendance();
-}
-
-
-/* ============================================================
-   25. SỰ KIỆN CHỌN LỚP
-   ============================================================ */
-
-function setupEvents() {
-
-    const classSelect =
-        document.getElementById(
-            "classSelect"
-        );
-
-
-    classSelect.addEventListener(
-        "change",
-        function () {
-
-            currentClass =
-                this.value;
-
-            console.log(
-                "Đã chọn lớp:",
-                currentClass
-            );
-
-            renderAll();
-        }
-    );
-
-
-    const studentSearch =
-        document.getElementById(
-            "studentSearch"
-        );
-
-
-    studentSearch.addEventListener(
-        "input",
-        function () {
-
-            renderStudents();
-
-            renderScores();
-
-            renderAttendance();
-        }
-    );
-
-
-    const dateInput =
-        document.getElementById(
-            "attendanceDate"
-        );
-
-
-    dateInput.addEventListener(
-        "change",
-        function () {
-
-            currentDate =
-                this.value;
-
-            console.log(
-                "Ngày điểm danh:",
-                currentDate
-            );
-
-            renderAttendance();
-        }
-    );
-
-
-    const reloadButton =
-        document.getElementById(
-            "reloadButton"
-        );
-
-
-    reloadButton.addEventListener(
-        "click",
-        async function () {
-
-            this.disabled = true;
-
-            this.textContent =
-                "⏳ Đang tải...";
-
-
-            try {
-
-                await loadAllData();
-
-            } finally {
-
-                this.disabled = false;
-
-                this.textContent =
-                    "🔄 Tải lại";
             }
+        );
+
+
+    if (classData.length === 0) {
+
+        tbody.innerHTML =
+            `
+            <tr>
+                <td
+                    colspan="6"
+                    class="empty">
+
+                    Chưa có dữ liệu thi đua.
+
+                </td>
+            </tr>
+            `;
+
+        return;
+
+    }
+
+
+    classData.forEach(
+        (item, index) => {
+
+            const maHS =
+                getValue(
+                    item,
+                    [
+                        "MaHS",
+                        "Mã HS"
+                    ]
+                );
+
+
+            const ngay =
+                getValue(
+                    item,
+                    [
+                        "Ngay",
+                        "Ngày"
+                    ]
+                );
+
+
+            const loai =
+                getValue(
+                    item,
+                    [
+                        "Loai",
+                        "Loại"
+                    ]
+                );
+
+
+            const noiDung =
+                getValue(
+                    item,
+                    [
+                        "NoiDung",
+                        "Nội dung"
+                    ]
+                );
+
+
+            const diem =
+                getValue(
+                    item,
+                    [
+                        "Diem",
+                        "Điểm"
+                    ]
+                );
+
+
+            tbody.innerHTML +=
+                `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(maHS || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(ngay || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(loai || "—")}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(noiDung || "—")}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(diem || "—")}
+                        </strong>
+                    </td>
+
+                </tr>
+                `;
+
         }
     );
+
 }
 
 
-/* ============================================================
-   26. ĐẶT NGÀY HIỆN TẠI
-   ============================================================ */
+/* =========================================================
+   15. NGÀY HIỆN TẠI
+   ========================================================= */
 
-function setToday() {
-
-    const input =
-        document.getElementById(
-            "attendanceDate"
-        );
-
+function getTodayString() {
 
     const now =
         new Date();
@@ -1844,38 +1517,987 @@ function setToday() {
         ).padStart(2, "0");
 
 
-    const date =
-        `${year}-${month}-${day}`;
+    return (
+        year +
+        "-" +
+        month +
+        "-" +
+        day
+    );
 
-
-    input.value = date;
-
-    currentDate = date;
 }
 
 
-/* ============================================================
-   27. KHỞI ĐỘNG ỨNG DỤNG
-   ============================================================ */
+/* =========================================================
+   16. CHUẨN HÓA NGÀY
+   ========================================================= */
+
+function normalizeDate(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+
+    let str =
+        String(value).trim();
+
+
+    /*
+       yyyy-mm-dd
+    */
+
+    if (
+        /^\d{4}-\d{2}-\d{2}$/.test(str)
+    ) {
+        return str;
+    }
+
+
+    /*
+       dd/mm/yyyy
+    */
+
+    let match =
+        str.match(
+            /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+        );
+
+
+    if (match) {
+
+        return (
+            match[3] +
+            "-" +
+            String(match[2]).padStart(2, "0") +
+            "-" +
+            String(match[1]).padStart(2, "0")
+        );
+
+    }
+
+
+    /*
+       Google có thể trả về Date(...)
+    */
+
+    if (
+        str.startsWith("Date(")
+    ) {
+
+        const numbers =
+            str
+                .replace(
+                    /Date\(|\)/g,
+                    ""
+                )
+                .split(",");
+
+
+        if (numbers.length >= 3) {
+
+            const date =
+                new Date(
+                    Number(numbers[0]),
+                    Number(numbers[1]),
+                    Number(numbers[2])
+                );
+
+
+            return (
+                date.getFullYear() +
+                "-" +
+                String(
+                    date.getMonth() + 1
+                ).padStart(2, "0") +
+                "-" +
+                String(
+                    date.getDate()
+                ).padStart(2, "0")
+            );
+
+        }
+
+    }
+
+
+    return str;
+
+}
+
+
+/* =========================================================
+   17. TÌM TRẠNG THÁI ĐIỂM DANH
+   ========================================================= */
+
+function getAttendanceStatus(
+    maHS,
+    date
+) {
+
+    const targetDate =
+        normalizeDate(date);
+
+
+    /*
+       Tìm bản ghi mới nhất
+       đúng học sinh + ngày.
+    */
+
+    const record =
+        DATA.diemDanh.find(
+            item => {
+
+                const itemMaHS =
+                    text(
+                        getValue(
+                            item,
+                            [
+                                "MaHS",
+                                "Mã HS"
+                            ]
+                        )
+                    );
+
+
+                const itemDate =
+                    normalizeDate(
+                        getValue(
+                            item,
+                            [
+                                "Ngay",
+                                "Ngày"
+                            ]
+                        )
+                    );
+
+
+                return (
+                    itemMaHS === maHS &&
+                    itemDate === targetDate
+                );
+
+            }
+        );
+
+
+    if (!record) {
+
+        return {
+            status: "",
+            note: ""
+        };
+
+    }
+
+
+    return {
+
+        status:
+            text(
+                getValue(
+                    record,
+                    [
+                        "Trangthai",
+                        "TrangThai",
+                        "Trạng thái"
+                    ]
+                )
+            ),
+
+        note:
+            text(
+                getValue(
+                    record,
+                    [
+                        "Ghichu",
+                        "GhiChu",
+                        "Ghi chú"
+                    ]
+                )
+            )
+
+    };
+
+}
+
+
+/* =========================================================
+   18. CHUẨN HÓA TRẠNG THÁI
+   ========================================================= */
+
+function normalizeStatus(status) {
+
+    const value =
+        normalizeKey(status);
+
+
+    if (
+        [
+            "comat",
+            "present",
+            "co",
+            "dihoc",
+            "duhoc"
+        ].includes(value)
+    ) {
+        return "present";
+    }
+
+
+    if (
+        [
+            "dim uon",
+            "dimuon",
+            "late",
+            "muon"
+        ].includes(value)
+    ) {
+        return "late";
+    }
+
+
+    if (
+        [
+            "vang",
+            "absent",
+            "nghiphep",
+            "nghikoph ep",
+            "nghi"
+        ].includes(value)
+    ) {
+        return "absent";
+    }
+
+
+    return "unknown";
+
+}
+
+
+/* =========================================================
+   19. BADGE TRẠNG THÁI
+   ========================================================= */
+
+function attendanceBadge(status) {
+
+    const type =
+        normalizeStatus(status);
+
+
+    if (type === "present") {
+
+        return `
+            <span class="badge badge-present">
+                Có mặt
+            </span>
+        `;
+
+    }
+
+
+    if (type === "late") {
+
+        return `
+            <span class="badge badge-late">
+                Đi muộn
+            </span>
+        `;
+
+    }
+
+
+    if (type === "absent") {
+
+        return `
+            <span class="badge badge-absent">
+                Vắng
+            </span>
+        `;
+
+    }
+
+
+    return `
+        <span class="badge badge-unknown">
+            Chưa xác định
+        </span>
+    `;
+
+}
+
+
+/* =========================================================
+   20. HIỂN THỊ ĐIỂM DANH
+   ========================================================= */
+
+function renderAttendance() {
+
+    const tbody =
+        document.getElementById(
+            "attendanceTableBody"
+        );
+
+
+    if (!tbody) {
+        return;
+    }
+
+
+    tbody.innerHTML =
+        "";
+
+
+    const students =
+        getFilteredStudents();
+
+
+    const dateInput =
+        document.getElementById(
+            "attendanceDate"
+        );
+
+
+    const date =
+        dateInput
+            ? dateInput.value
+            : getTodayString();
+
+
+    if (students.length === 0) {
+
+        tbody.innerHTML =
+            `
+            <tr>
+                <td
+                    colspan="6"
+                    class="empty">
+
+                    Chưa có học sinh.
+
+                </td>
+            </tr>
+            `;
+
+        updateAttendanceStats();
+
+        return;
+
+    }
+
+
+    students.forEach(
+        (student, index) => {
+
+            const maHS =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "MaHS",
+                            "Mã HS"
+                        ]
+                    )
+                );
+
+
+            const hoTen =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "HoTen",
+                            "Họ tên",
+                            "Họ và tên"
+                        ]
+                    )
+                );
+
+
+            const attendance =
+                getAttendanceStatus(
+                    maHS,
+                    date
+                );
+
+
+            const displayDate =
+                date
+                    ? formatDateVN(date)
+                    : "—";
+
+
+            tbody.innerHTML +=
+                `
+                <tr>
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(maHS)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(hoTen || "—")}
+                    </td>
+
+                    <td>
+                        ${
+                            attendance.status
+                                ? attendanceBadge(
+                                    attendance.status
+                                )
+                                : attendanceBadge("")
+                        }
+                    </td>
+
+                    <td>
+                        ${displayDate}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            attendance.note || "—"
+                        )}
+                    </td>
+
+                </tr>
+                `;
+
+        }
+    );
+
+
+    updateAttendanceStats();
+
+}
+
+
+/* =========================================================
+   21. ĐỊNH DẠNG NGÀY VIỆT NAM
+   ========================================================= */
+
+function formatDateVN(date) {
+
+    if (!date) {
+        return "";
+    }
+
+
+    const parts =
+        date.split("-");
+
+
+    if (parts.length !== 3) {
+        return date;
+    }
+
+
+    return (
+        parts[2] +
+        "/" +
+        parts[1] +
+        "/" +
+        parts[0]
+    );
+
+}
+
+
+/* =========================================================
+   22. THỐNG KÊ ĐIỂM DANH
+   ========================================================= */
+
+function updateAttendanceStats() {
+
+    const students =
+        getFilteredStudents();
+
+
+    const dateInput =
+        document.getElementById(
+            "attendanceDate"
+        );
+
+
+    const date =
+        dateInput
+            ? dateInput.value
+            : getTodayString();
+
+
+    let present = 0;
+
+    let late = 0;
+
+    let absent = 0;
+
+    let unknown = 0;
+
+
+    students.forEach(
+        student => {
+
+            const maHS =
+                text(
+                    getValue(
+                        student,
+                        [
+                            "MaHS",
+                            "Mã HS"
+                        ]
+                    )
+                );
+
+
+            const record =
+                getAttendanceStatus(
+                    maHS,
+                    date
+                );
+
+
+            const type =
+                normalizeStatus(
+                    record.status
+                );
+
+
+            if (type === "present") {
+
+                present++;
+
+            }
+            else if (
+                type === "late"
+            ) {
+
+                late++;
+
+            }
+            else if (
+                type === "absent"
+            ) {
+
+                absent++;
+
+            }
+            else {
+
+                unknown++;
+
+            }
+
+        }
+    );
+
+
+    setText(
+        "totalCount",
+        students.length
+    );
+
+
+    setText(
+        "presentCount",
+        present
+    );
+
+
+    setText(
+        "lateCount",
+        late
+    );
+
+
+    setText(
+        "absentCount",
+        absent
+    );
+
+
+    setText(
+        "unknownCount",
+        unknown
+    );
+
+}
+
+
+/* =========================================================
+   23. SET TEXT
+   ========================================================= */
+
+function setText(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(id);
+
+
+    if (element) {
+
+        element.textContent =
+            value;
+
+    }
+
+}
+
+
+/* =========================================================
+   24. RENDER TOÀN BỘ
+   ========================================================= */
+
+function renderAll() {
+
+    console.log(
+        "Đang render giao diện..."
+    );
+
+
+    renderStudents();
+
+    renderScores();
+
+    renderCompetition();
+
+    renderAttendance();
+
+    updateAttendanceStats();
+
+
+    console.log(
+        "Đã render xong."
+    );
+
+}
+
+
+/* =========================================================
+   25. THAY ĐỔI LỚP
+   ========================================================= */
+
+function handleClassChange(event) {
+
+    selectedClass =
+        event.target.value;
+
+
+    console.log(
+        "Lớp được chọn:",
+        selectedClass
+    );
+
+
+    renderAll();
+
+}
+
+
+/* =========================================================
+   26. TÌM KIẾM
+   ========================================================= */
+
+function handleSearch() {
+
+    renderAll();
+
+}
+
+
+/* =========================================================
+   27. THAY ĐỔI NGÀY
+   ========================================================= */
+
+function handleDateChange() {
+
+    renderAttendance();
+
+    updateAttendanceStats();
+
+}
+
+
+/* =========================================================
+   28. CAMERA
+   ========================================================= */
+
+async function startCamera() {
+
+    const video =
+        document.getElementById(
+            "camera"
+        );
+
+
+    const status =
+        document.getElementById(
+            "cameraStatus"
+        );
+
+
+    if (!navigator.mediaDevices) {
+
+        if (status) {
+
+            status.textContent =
+                "Trình duyệt không hỗ trợ camera.";
+
+        }
+
+        return;
+
+    }
+
+
+    try {
+
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+                    facingMode: "user"
+                },
+
+                audio: false
+
+            });
+
+
+        if (video) {
+
+            video.srcObject =
+                cameraStream;
+
+        }
+
+
+        if (status) {
+
+            status.textContent =
+                "🟢 Camera đang hoạt động.";
+
+        }
+
+    }
+    catch (error) {
+
+        console.error(
+            "Camera error:",
+            error
+        );
+
+
+        if (status) {
+
+            status.textContent =
+                "❌ Không thể bật camera: " +
+                error.message;
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   29. TẮT CAMERA
+   ========================================================= */
+
+function stopCamera() {
+
+    if (cameraStream) {
+
+        cameraStream
+            .getTracks()
+            .forEach(
+                track =>
+                    track.stop()
+            );
+
+        cameraStream =
+            null;
+
+    }
+
+
+    const video =
+        document.getElementById(
+            "camera"
+        );
+
+
+    if (video) {
+
+        video.srcObject =
+            null;
+
+    }
+
+
+    const status =
+        document.getElementById(
+            "cameraStatus"
+        );
+
+
+    if (status) {
+
+        status.textContent =
+            "Camera đã tắt.";
+
+    }
+
+}
+
+
+/* =========================================================
+   30. GẮN SỰ KIỆN
+   ========================================================= */
+
+function setupEvents() {
+
+    const classSelect =
+        document.getElementById(
+            "classSelect"
+        );
+
+
+    if (classSelect) {
+
+        classSelect.addEventListener(
+            "change",
+            handleClassChange
+        );
+
+    }
+
+
+    const studentSearch =
+        document.getElementById(
+            "studentSearch"
+        );
+
+
+    if (studentSearch) {
+
+        studentSearch.addEventListener(
+            "input",
+            handleSearch
+        );
+
+    }
+
+
+    const attendanceDate =
+        document.getElementById(
+            "attendanceDate"
+        );
+
+
+    if (attendanceDate) {
+
+        attendanceDate.value =
+            getTodayString();
+
+
+        attendanceDate.addEventListener(
+            "change",
+            handleDateChange
+        );
+
+    }
+
+
+    const reloadBtn =
+        document.getElementById(
+            "reloadBtn"
+        );
+
+
+    if (reloadBtn) {
+
+        reloadBtn.addEventListener(
+            "click",
+            loadAllData
+        );
+
+    }
+
+
+    const startCameraBtn =
+        document.getElementById(
+            "startCameraBtn"
+        );
+
+
+    if (startCameraBtn) {
+
+        startCameraBtn.addEventListener(
+            "click",
+            startCamera
+        );
+
+    }
+
+
+    const stopCameraBtn =
+        document.getElementById(
+            "stopCameraBtn"
+        );
+
+
+    if (stopCameraBtn) {
+
+        stopCameraBtn.addEventListener(
+            "click",
+            stopCamera
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   31. KHỞI ĐỘNG APP
+   ========================================================= */
 
 async function initApp() {
 
     console.log(
-        "🤖 Ứng dụng bắt đầu..."
+        "================================="
+    );
+
+    console.log(
+        "ỨNG DỤNG BẮT ĐẦU..."
+    );
+
+    console.log(
+        "================================="
     );
 
 
-    setToday();
-
     setupEvents();
 
+
     await loadAllData();
+
 }
 
 
-/* ============================================================
-   28. CHẠY
-   ============================================================ */
+/* =========================================================
+   32. CHẠY APP
+   ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",

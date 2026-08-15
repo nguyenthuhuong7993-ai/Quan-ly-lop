@@ -77,7 +77,11 @@ async function loadClasses() {
             .textContent = classes.length;
 
         await loadStudents();
+/ Hiển thị học sinh của lớp đang được chọn
+const currentClass =
+    document.getElementById("classSelect").value;
 
+displayStudents(currentClass);
         showLoading(false);
 
     } catch (error) {

@@ -1,1193 +1,1251 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Quản lý lớp học</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f7fb;
-            color: #17203a;
-        }
-
-        button,
-        input,
-        select {
-            font-family: inherit;
-        }
-
-        /* =========================
-           LAYOUT
-        ========================= */
-
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* =========================
-           SIDEBAR
-        ========================= */
-
-        .sidebar {
-            width: 260px;
-            background: white;
-            border-right: 1px solid #e6eaf2;
-            padding: 28px 18px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            z-index: 10;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 0 10px 30px;
-        }
-
-        .logo {
-            width: 52px;
-            height: 52px;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #3455d1, #5078ed);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 23px;
-            font-weight: 800;
-            box-shadow: 0 8px 20px rgba(52,85,209,.20);
-        }
-
-        .logo-title {
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        .logo-sub {
-            font-size: 12px;
-            color: #8190ad;
-            margin-top: 4px;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .menu-item {
-            border: 0;
-            background: transparent;
-            width: 100%;
-            text-align: left;
-            padding: 15px 16px;
-            border-radius: 15px;
-            color: #34415f;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: .2s;
-        }
-
-        .menu-item:hover {
-            background: #f1f5ff;
-        }
-
-        .menu-item.active {
-            background: #edf3ff;
-            color: #4165d5;
-        }
-
-        .sidebar-bottom {
-            position: absolute;
-            left: 18px;
-            right: 18px;
-            bottom: 25px;
-        }
-
-        .sync-box {
-            background: #f5f8fd;
-            border-radius: 16px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .sync-dot {
-            width: 13px;
-            height: 13px;
-            background: #42bd76;
-            border-radius: 50%;
-            box-shadow: 0 0 0 5px #dff6e9;
-        }
-
-        .sync-title {
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        .sync-text {
-            color: #7c89a4;
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .teacher {
-            border-top: 1px solid #e7ebf3;
-            padding-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .teacher-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #ef6686;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-        }
-
-        /* =========================
-           MAIN
-        ========================= */
-
-        .main {
-            margin-left: 260px;
-            width: calc(100% - 260px);
-            min-height: 100vh;
-        }
-
-        .topbar {
-            height: 84px;
-            background: white;
-            border-bottom: 1px solid #e6eaf2;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 38px;
-        }
-
-        .page-title {
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .page-date {
-            color: #8290ab;
-            margin-top: 5px;
-            font-size: 14px;
-        }
-
-        .top-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .refresh-btn,
-        .class-select {
-            height: 46px;
-            border: 1px solid #e0e6f0;
-            background: white;
-            border-radius: 14px;
-            padding: 0 17px;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        .class-select {
-            min-width: 170px;
-            color: #365dcc;
-            font-weight: 700;
-        }
-
-        .add-btn {
-            border: none;
-            height: 46px;
-            border-radius: 14px;
-            padding: 0 22px;
-            color: white;
-            background: linear-gradient(135deg, #4163d6, #5279e8);
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 8px 18px rgba(65,99,214,.20);
-        }
-
-        .content {
-            padding: 30px 34px 60px;
-            max-width: 1500px;
-            margin: auto;
-        }
-
-        /* =========================
-           HERO
-        ========================= */
-
-        .hero {
-            min-height: 255px;
-            border-radius: 28px;
-            padding: 38px 45px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(110deg, #3e55c6, #6397ee);
-            box-shadow: 0 18px 40px rgba(61,87,180,.18);
-        }
-
-        .hero:before {
-            content: "";
-            position: absolute;
-            width: 430px;
-            height: 430px;
-            border-radius: 50%;
-            right: -100px;
-            top: -170px;
-            border: 55px solid rgba(255,255,255,.08);
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .hello {
-            display: inline-block;
-            background: rgba(255,255,255,.18);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
-
-        .hero h1 {
-            margin: 0;
-            font-size: 38px;
-        }
-
-        .hero p {
-            font-size: 17px;
-            margin: 12px 0 28px;
-            opacity: .95;
-        }
-
-        .hero-btn {
-            border: none;
-            background: white;
-            color: #4263d5;
-            border-radius: 14px;
-            padding: 15px 22px;
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .hero-cap {
-            position: absolute;
-            right: 80px;
-            bottom: 35px;
-            font-size: 75px;
-            z-index: 2;
-        }
-
-        /* =========================
-           STAT CARDS
-        ========================= */
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-top: 24px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 22px;
-            padding: 25px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            box-shadow: 0 8px 25px rgba(43,62,110,.07);
-        }
-
-        .stat-icon {
-            width: 54px;
-            height: 54px;
-            border-radius: 17px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-            background: #eef3ff;
-        }
-
-        .stat-label {
-            color: #8190ad;
-            font-size: 14px;
-        }
-
-        .stat-value {
-            font-size: 31px;
-            font-weight: 800;
-            margin-top: 3px;
-        }
-
-        .stat-sub {
-            color: #8190ad;
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        /* =========================
-           GRID
-        ========================= */
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1.3fr .9fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 22px;
-            padding: 25px;
-            box-shadow: 0 8px 25px rgba(43,62,110,.07);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 800;
-        }
-
-        .card-sub {
-            color: #8190ad;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        .link-btn {
-            border: 0;
-            background: transparent;
-            color: #4163d6;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* =========================
-           LEARNING
-        ========================= */
-
-        .progress-row {
-            display: grid;
-            grid-template-columns: 80px 1fr 30px;
-            align-items: center;
-            gap: 12px;
-            margin: 15px 0;
-            font-size: 13px;
-        }
-
-        .progress-bg {
-            height: 10px;
-            background: #edf1f7;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            border-radius: 20px;
-            background: #4eb47a;
-        }
-
-        /* =========================
-           STUDENT ATTENTION
-        ========================= */
-
-        .attention-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #f7f9fc;
-            padding: 13px;
-            border-radius: 14px;
-            margin-bottom: 10px;
-        }
-
-        .attention-name {
-            font-weight: 700;
-        }
-
-        .attention-note {
-            color: #8190ad;
-            font-size: 12px;
-            margin-top: 3px;
-        }
-
-        .attention-score {
-            background: #fff0dc;
-            color: #e58c25;
-            padding: 7px 9px;
-            border-radius: 10px;
-            font-weight: 800;
-        }
-
-        /* =========================
-           DATA TABLE
-        ========================= */
-
-        .data-card {
-            margin-top: 20px;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-
-        .search {
-            flex: 1;
-            height: 44px;
-            border: 1px solid #dfe5ef;
-            border-radius: 12px;
-            padding: 0 14px;
-            outline: none;
-        }
-
-        .date-input {
-            height: 44px;
-            border: 1px solid #dfe5ef;
-            border-radius: 12px;
-            padding: 0 14px;
-        }
-
-        .table-wrap {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        th {
-            text-align: left;
-            background: #eef2ff;
-            color: #4354a0;
-            padding: 11px 10px;
-            white-space: nowrap;
-        }
-
-        td {
-            padding: 11px 10px;
-            border-bottom: 1px solid #edf0f5;
-        }
-
-        tr:hover td {
-            background: #fafbfe;
-        }
-
-        .badge {
-            display: inline-block;
-            border-radius: 8px;
-            padding: 5px 9px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .present {
-            background: #dff7e8;
-            color: #2c9a58;
-        }
-
-        .absent {
-            background: #ffe2e2;
-            color: #db4545;
-        }
-
-        .late {
-            background: #fff0d0;
-            color: #c98813;
-        }
-
-        .unknown {
-            background: #e9edf4;
-            color: #667085;
-        }
-
-        .empty {
-            text-align: center;
-            color: #8190ad;
-            padding: 30px;
-        }
-
-        /* =========================
-           LOADING
-        ========================= */
-
-        .loading {
-            text-align: center;
-            padding: 30px;
-            color: #70809f;
-        }
-
-        .error-box {
-            display: none;
-            background: #ffe7e7;
-            color: #c53030;
-            border-radius: 14px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
-
-        @media(max-width: 1100px) {
-            .sidebar {
-                width: 210px;
-            }
-
-            .main {
-                margin-left: 210px;
-                width: calc(100% - 210px);
-            }
-
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media(max-width: 800px) {
-            .sidebar {
-                display: none;
-            }
-
-            .main {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .topbar {
-                padding: 0 18px;
-            }
-
-            .content {
-                padding: 18px;
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-            }
-
-            .hero h1 {
-                font-size: 28px;
-            }
-
-            .hero-cap {
-                display: none;
-            }
-
-            .toolbar {
-                flex-direction: column;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Quản lý lớp học</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7fc;
+      color: #18233f;
+    }
+
+    button,
+    input,
+    select {
+      font-family: inherit;
+    }
+
+    /* =========================
+       LAYOUT
+    ========================= */
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* =========================
+       SIDEBAR
+    ========================= */
+
+    .sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: white;
+      border-right: 1px solid #e5eaf4;
+      padding: 26px 18px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 10;
+    }
+
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 10px 30px;
+    }
+
+    .logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #3156d9, #547bea);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(55, 91, 210, .2);
+    }
+
+    .logo-title {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .logo-subtitle {
+      color: #8090ae;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .menu-item {
+      border: none;
+      background: transparent;
+      padding: 15px 16px;
+      border-radius: 15px;
+      text-align: left;
+      font-size: 16px;
+      font-weight: 700;
+      color: #31405e;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: .2s;
+    }
+
+    .menu-item:hover {
+      background: #f1f5ff;
+    }
+
+    .menu-item.active {
+      background: #edf3ff;
+      color: #4265d8;
+    }
+
+    .sidebar-bottom {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 22px;
+    }
+
+    .sync-box {
+      background: #f3f7fd;
+      border-radius: 15px;
+      padding: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .sync-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #42ba72;
+      box-shadow: 0 0 0 6px #ddf5e7;
+      flex-shrink: 0;
+    }
+
+    .sync-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .sync-text {
+      color: #7d8ba7;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .teacher-box {
+      border-top: 1px solid #e8edf6;
+      padding-top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .teacher-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #ef6d92;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .teacher-name {
+      font-weight: 700;
+    }
+
+    .teacher-class {
+      color: #8995ad;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    /* =========================
+       MAIN
+    ========================= */
+
+    .main {
+      margin-left: 260px;
+      width: calc(100% - 260px);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 82px;
+      background: white;
+      border-bottom: 1px solid #e5eaf4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 34px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .page-date {
+      margin-top: 5px;
+      color: #8290ab;
+      font-size: 13px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .refresh-btn,
+    .class-select {
+      height: 48px;
+      border: 1px solid #e0e7f3;
+      background: white;
+      border-radius: 14px;
+      padding: 0 18px;
+      color: #53637f;
+      cursor: pointer;
+    }
+
+    .refresh-btn {
+      width: 48px;
+      font-size: 21px;
+    }
+
+    .class-select {
+      min-width: 160px;
+      font-weight: 700;
+      color: #4262c9;
+    }
+
+    .add-btn {
+      height: 48px;
+      padding: 0 23px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #4162d8, #5277e5);
+      color: white;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(65, 98, 216, .2);
+    }
+
+    .content {
+      padding: 32px;
+      max-width: 1600px;
+      margin: auto;
+    }
+
+    /* =========================
+       HERO
+    ========================= */
+
+    .hero {
+      min-height: 250px;
+      border-radius: 28px;
+      background: linear-gradient(115deg, #3e57c9, #6092ef);
+      color: white;
+      padding: 38px 46px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 14px 35px rgba(53, 87, 190, .15);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 430px;
+      height: 430px;
+      border: 55px solid rgba(255,255,255,.08);
+      border-radius: 50%;
+      right: -90px;
+      top: -210px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.15);
+      padding: 8px 15px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero h1 {
+      font-size: 36px;
+      margin: 18px 0 8px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero p {
+      font-size: 17px;
+      margin: 0;
+      opacity: .92;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-btn {
+      margin-top: 25px;
+      border: none;
+      background: white;
+      color: #4262d3;
+      padding: 14px 22px;
+      border-radius: 13px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-icon {
+      position: absolute;
+      right: 8%;
+      bottom: 42px;
+      font-size: 70px;
+      z-index: 2;
+    }
+
+    /* =========================
+       STAT CARDS
+    ========================= */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .stat-card {
+      background: white;
+      border: 1px solid #e9edf5;
+      border-radius: 22px;
+      padding: 25px;
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      min-height: 125px;
+    }
+
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      flex-shrink: 0;
+    }
+
+    .purple {
+      background: #f0edff;
+    }
+
+    .green {
+      background: #eaf8ef;
+    }
+
+    .yellow {
+      background: #fff5d9;
+    }
+
+    .blue {
+      background: #edf0ff;
+    }
+
+    .stat-label {
+      color: #8190ad;
+      font-size: 13px;
+    }
+
+    .stat-value {
+      font-size: 29px;
+      font-weight: 800;
+      margin-top: 5px;
+    }
+
+    .stat-sub {
+      color: #8490a7;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    /* =========================
+       PANELS
+    ========================= */
+
+    .two-columns {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #e9edf5;
+      border-radius: 22px;
+      padding: 25px;
+    }
+
+    .panel-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .panel-subtitle {
+      color: #8995ac;
+      font-size: 12px;
+      margin-bottom: 18px;
+    }
+
+    .link-btn {
+      border: none;
+      background: transparent;
+      color: #4262d3;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* =========================
+       PROGRESS
+    ========================= */
+
+    .progress-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 25px;
+      gap: 12px;
+      align-items: center;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+
+    .progress-bar {
+      height: 9px;
+      border-radius: 10px;
+      background: #edf1f7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+    }
+
+    .excellent {
+      background: #46b978;
+    }
+
+    .good {
+      background: #4b6cdb;
+    }
+
+    .average {
+      background: #7c61db;
+    }
+
+    .need-help {
+      background: #f3aa26;
+    }
+
+    /* =========================
+       TABLE
+    ========================= */
+
+    .table-panel {
+      margin-top: 22px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      background: #eef2ff;
+      color: #3d4e9b;
+      font-weight: 800;
+      text-align: left;
+      padding: 11px 10px;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 1px solid #edf0f5;
+      padding: 12px 10px;
+      color: #34415d;
+    }
+
+    tbody tr:hover {
+      background: #fafbff;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-present {
+      background: #ddf7e7;
+      color: #27824c;
+    }
+
+    .status-absent {
+      background: #ffe3e3;
+      color: #bd4141;
+    }
+
+    .status-late {
+      background: #fff0c9;
+      color: #a96b00;
+    }
+
+    .empty {
+      text-align: center;
+      color: #909bb0;
+      padding: 35px !important;
+    }
+
+    /* =========================
+       LOADING / ERROR
+    ========================= */
+
+    .loading {
+      color: #72809a;
+      padding: 25px;
+      text-align: center;
+    }
+
+    .error {
+      color: #c53c3c;
+      background: #fff0f0;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 1100px) {
+
+      .sidebar {
+        width: 210px;
+      }
+
+      .main {
+        margin-left: 210px;
+        width: calc(100% - 210px);
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .two-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 800px) {
+
+      .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+      }
+
+      .sidebar-bottom {
+        position: static;
+        margin-top: 30px;
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .app {
+        display: block;
+      }
+
+      .topbar {
+        padding: 15px;
+        height: auto;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .content {
+        padding: 15px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 28px;
+      }
+
+      .hero h1 {
+        font-size: 27px;
+      }
+
+      .hero-icon {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
 <div class="app">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
 
-        <div class="logo-area">
-            <div class="logo">QL</div>
+    <div class="logo-box">
+      <div class="logo">QL</div>
 
-            <div>
-                <div class="logo-title">Quản lý lớp</div>
-                <div class="logo-sub">Gọn gàng trong từng tiết</div>
-            </div>
+      <div>
+        <div class="logo-title">Quản lý lớp</div>
+        <div class="logo-subtitle">Gọn gàng trong từng tiết</div>
+      </div>
+    </div>
+
+    <nav class="menu">
+
+      <button class="menu-item active">
+        🏠
+        <span>Tổng quan</span>
+      </button>
+
+      <button class="menu-item">
+        👨‍🎓
+        <span>Học sinh</span>
+      </button>
+
+      <button class="menu-item">
+        📝
+        <span>Trong tiết</span>
+      </button>
+
+      <button class="menu-item">
+        📊
+        <span>Thống kê</span>
+      </button>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+
+      <div class="sync-box">
+        <div class="sync-dot"></div>
+
+        <div>
+          <div class="sync-title">Đã đồng bộ</div>
+          <div class="sync-text">Google Sheet đang hoạt động</div>
+        </div>
+      </div>
+
+      <div class="teacher-box">
+
+        <div class="teacher-avatar">
+          TH
         </div>
 
-        <div class="menu">
+        <div>
+          <div class="teacher-name">
+            Cô Thu Hường
+          </div>
 
-            <button class="menu-item active" onclick="showSection('overview')">
-                🏠 &nbsp; Tổng quan
-            </button>
+          <div class="teacher-class" id="teacherClass">
+            Lớp —
+          </div>
+        </div>
 
-            <button class="menu-item" onclick="scrollToSection('studentsCard')">
-                🧑‍🎓 &nbsp; Học sinh
-            </button>
+      </div>
 
-            <button class="menu-item" onclick="scrollToSection('scoresCard')">
-                📝 &nbsp; Trong tiết
-            </button>
+    </div>
 
-            <button class="menu-item" onclick="scrollToSection('competitionCard')">
-                📊 &nbsp; Thống kê
-            </button>
+  </aside>
+
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <header class="topbar">
+
+      <div>
+        <div class="page-title">Tổng quan</div>
+
+        <div class="page-date" id="currentDate">
+          Đang tải ngày...
+        </div>
+      </div>
+
+
+      <div class="top-actions">
+
+        <button
+          class="refresh-btn"
+          onclick="loadAllData()"
+          title="Tải lại dữ liệu">
+          ↻
+        </button>
+
+        <select
+          id="classSelect"
+          class="class-select">
+          <option value="">
+            Đang tải lớp...
+          </option>
+        </select>
+
+        <button
+          class="add-btn"
+          onclick="alert('Chức năng thêm học sinh sẽ được bổ sung sau.')">
+          ＋ Thêm học sinh
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <section class="content">
+
+      <!-- HERO -->
+
+      <section class="hero">
+
+        <div class="hero-badge">
+          👋 CHÀO NGÀY MỚI
+        </div>
+
+        <h1 id="welcomeText">
+          Chào cô Thu Hường!
+        </h1>
+
+        <p>
+          Một ngày dạy học thật vui nhé.
+          Mọi con số quan trọng của lớp đều ở đây.
+        </p>
+
+        <button
+          class="hero-btn"
+          onclick="scrollToStudents()">
+          Mở danh sách lớp&nbsp;&nbsp; →
+        </button>
+
+        <div class="hero-icon">
+          🎓
+        </div>
+
+      </section>
+
+
+      <!-- STATS -->
+
+      <section class="stats">
+
+        <div class="stat-card">
+
+          <div class="stat-icon purple">
+            👥
+          </div>
+
+          <div>
+            <div class="stat-label">
+              Sĩ số lớp
+            </div>
+
+            <div
+              class="stat-value"
+              id="totalStudents">
+              0
+            </div>
+
+            <div
+              class="stat-sub"
+              id="statClassName">
+              Lớp —
+            </div>
+          </div>
 
         </div>
 
-        <div class="sidebar-bottom">
 
-            <div class="sync-box">
-                <div class="sync-dot"></div>
+        <div class="stat-card">
 
-                <div>
-                    <div class="sync-title">Đã đồng bộ</div>
-                    <div class="sync-text">Google Sheet đang hoạt động</div>
-                </div>
+          <div class="stat-icon green">
+            ⭐
+          </div>
+
+          <div>
+            <div class="stat-label">
+              Điểm trung bình
             </div>
 
-            <div class="teacher">
-
-                <div class="teacher-avatar">
-                    GV
-                </div>
-
-                <div>
-                    <b>Cô Thu Hường</b>
-                    <div class="sync-text">
-                        Lớp <span id="teacherClass">—</span>
-                    </div>
-                </div>
-
+            <div
+              class="stat-value"
+              id="averageScore">
+              —
             </div>
+
+            <div class="stat-sub">
+              Cùng lớp cố gắng thêm nhé
+            </div>
+          </div>
 
         </div>
 
-    </aside>
 
+        <div class="stat-card">
 
-    <!-- MAIN -->
+          <div class="stat-icon yellow">
+            🏆
+          </div>
 
-    <main class="main">
-
-        <header class="topbar">
-
-            <div>
-                <div class="page-title">Tổng quan</div>
-                <div class="page-date" id="currentDate"></div>
+          <div>
+            <div class="stat-label">
+              Điểm tốt
             </div>
 
-            <div class="top-actions">
-
-                <button class="refresh-btn" onclick="loadAllData()">
-                    ↻
-                </button>
-
-                <select id="classSelect" class="class-select">
-                    <option value="">Đang tải lớp...</option>
-                </select>
-
-                <button class="add-btn" onclick="addStudent()">
-                    ＋ Thêm học sinh
-                </button>
-
+            <div
+              class="stat-value"
+              id="goodPercent">
+              0%
             </div>
 
-        </header>
+            <div class="stat-sub">
+              Tỷ lệ điểm từ 8 trở lên
+            </div>
+          </div>
 
+        </div>
 
-        <section class="content">
 
-            <div id="errorBox" class="error-box"></div>
+        <div class="stat-card">
 
+          <div class="stat-icon blue">
+            📚
+          </div>
 
-            <!-- HERO -->
+          <div>
+            <div class="stat-label">
+              Cột điểm TX
+            </div>
 
-            <section class="hero">
+            <div class="stat-value">
+              4
+            </div>
 
-                <div class="hero-content">
+            <div class="stat-sub">
+              TX1, TX2, TX3 và TX4
+            </div>
+          </div>
 
-                    <div class="hello">
-                        👋 CHÀO NGÀY MỚI
-                    </div>
+        </div>
 
-                    <h1>
-                        Chào cô Thu Hường!
-                    </h1>
+      </section>
 
-                    <p>
-                        Một ngày dạy học thật vui nhé.
-                        Mọi con số quan trọng của lớp đều ở đây.
-                    </p>
 
-                    <button class="hero-btn"
-                            onclick="scrollToSection('studentsCard')">
-                        Mở danh sách lớp &nbsp; →
-                    </button>
+      <!-- TWO PANELS -->
 
-                </div>
+      <section class="two-columns">
 
-                <div class="hero-cap">
-                    🎓
-                </div>
+        <!-- HỌC TẬP -->
 
-            </section>
+        <div class="panel">
 
+          <div class="panel-title-row">
 
-            <!-- STATISTICS -->
+            <div class="panel-title">
+              Tình hình học tập
+            </div>
 
-            <section class="stats">
+            <button class="link-btn">
+              Cả lớp
+            </button>
 
-                <div class="stat-card">
+          </div>
 
-                    <div class="stat-icon">👥</div>
+          <div class="panel-subtitle">
+            Phân bố theo điểm trung bình
+          </div>
 
-                    <div>
-                        <div class="stat-label">Sĩ số lớp</div>
-                        <div class="stat-value" id="totalStudents">0</div>
-                        <div class="stat-sub">
-                            <span id="className">Lớp —</span>
-                        </div>
-                    </div>
 
-                </div>
+          <div class="progress-row">
 
+            <span>Xuất sắc</span>
 
-                <div class="stat-card">
+            <div class="progress-bar">
+              <div
+                id="excellentBar"
+                class="progress-fill excellent"
+                style="width:0%">
+              </div>
+            </div>
 
-                    <div class="stat-icon">⭐</div>
+            <b id="excellentCount">0</b>
 
-                    <div>
-                        <div class="stat-label">Điểm trung bình</div>
-                        <div class="stat-value">
-                            <span id="averageScore">—</span>
-                            <small>/10</small>
-                        </div>
+          </div>
 
-                        <div class="stat-sub">
-                            Cùng lớp cố gắng thêm nhé
-                        </div>
-                    </div>
 
-                </div>
+          <div class="progress-row">
 
+            <span>Tốt</span>
 
-                <div class="stat-card">
+            <div class="progress-bar">
+              <div
+                id="goodBar"
+                class="progress-fill good"
+                style="width:0%">
+              </div>
+            </div>
 
-                    <div class="stat-icon">🏆</div>
+            <b id="goodCount">0</b>
 
-                    <div>
-                        <div class="stat-label">Điểm tốt</div>
+          </div>
 
-                        <div class="stat-value">
-                            <span id="goodPercent">0</span>
-                            <small>%</small>
-                        </div>
 
-                        <div class="stat-sub">
-                            Tỷ lệ điểm từ 8 trở lên
-                        </div>
-                    </div>
+          <div class="progress-row">
 
-                </div>
+            <span>Khá</span>
 
+            <div class="progress-bar">
+              <div
+                id="averageBar"
+                class="progress-fill average"
+                style="width:0%">
+              </div>
+            </div>
 
-                <div class="stat-card">
+            <b id="averageCount">0</b>
 
-                    <div class="stat-icon">📚</div>
+          </div>
 
-                    <div>
-                        <div class="stat-label">Cột điểm TX</div>
 
-                        <div class="stat-value">
-                            4
-                        </div>
+          <div class="progress-row">
 
-                        <div class="stat-sub">
-                            TX1, TX2, TX3 và TX4
-                        </div>
-                    </div>
+            <span>Cần cố gắng</span>
 
-                </div>
+            <div class="progress-bar">
+              <div
+                id="needHelpBar"
+                class="progress-fill need-help"
+                style="width:0%">
+              </div>
+            </div>
 
-            </section>
+            <b id="needHelpCount">0</b>
 
+          </div>
 
-            <!-- DASHBOARD -->
+        </div>
 
-            <section class="dashboard-grid">
 
-                <div class="card">
+        <!-- CẦN CHÚ Ý -->
 
-                    <div class="card-header">
+        <div class="panel">
 
-                        <div>
-                            <div class="card-title">
-                                Tình hình học tập
-                            </div>
+          <div class="panel-title-row">
 
-                            <div class="card-sub">
-                                Phân bố theo điểm trung bình
-                            </div>
-                        </div>
+            <div class="panel-title">
+              Cần chú ý
+            </div>
 
-                        <button class="link-btn">
-                            Cả lớp
-                        </button>
+            <button
+              class="link-btn"
+              onclick="scrollToScores()">
+              Xem sổ điểm
+            </button>
 
-                    </div>
+          </div>
 
+          <div class="panel-subtitle">
+            Học sinh cần được động viên
+          </div>
 
-                    <div class="progress-row">
-                        <span>Xuất sắc</span>
+          <div
+            id="attentionList"
+            class="empty">
+            🎉 Chưa có học sinh cần chú ý.
+          </div>
 
-                        <div class="progress-bg">
-                            <div id="excellentBar"
-                                 class="progress"
-                                 style="width:0%">
-                            </div>
-                        </div>
+        </div>
 
-                        <b id="excellentCount">0</b>
-                    </div>
+      </section>
 
 
-                    <div class="progress-row">
-                        <span>Tốt</span>
+      <!-- STUDENTS -->
 
-                        <div class="progress-bg">
-                            <div id="goodBar"
-                                 class="progress"
-                                 style="width:0%">
-                            </div>
-                        </div>
+      <section
+        id="studentsPanel"
+        class="panel table-panel">
 
-                        <b id="goodCount">0</b>
-                    </div>
+        <div class="panel-title-row">
 
+          <div class="panel-title">
+            👨‍🎓 Danh sách học sinh
+          </div>
 
-                    <div class="progress-row">
-                        <span>Khá</span>
+          <div
+            id="studentCountLabel"
+            class="stat-label">
+            0 học sinh
+          </div>
 
-                        <div class="progress-bg">
-                            <div id="fairBar"
-                                 class="progress"
-                                 style="width:0%">
-                            </div>
-                        </div>
+        </div>
 
-                        <b id="fairCount">0</b>
-                    </div>
+        <div class="panel-subtitle">
+          Danh sách học sinh của lớp đang chọn
+        </div>
 
+        <div class="table-wrap">
 
-                    <div class="progress-row">
-                        <span>Cần cố gắng</span>
+          <table>
 
-                        <div class="progress-bg">
-                            <div id="weakBar"
-                                 class="progress"
-                                 style="width:0%">
-                            </div>
-                        </div>
+            <thead>
 
-                        <b id="weakCount">0</b>
-                    </div>
+              <tr>
+                <th>STT</th>
+                <th>MÃ HS</th>
+                <th>HỌ VÀ TÊN</th>
+                <th>NGÀY SINH</th>
+                <th>GIỚI TÍNH</th>
+                <th>GHI CHÚ</th>
+              </tr>
 
-                </div>
+            </thead>
 
+            <tbody id="studentsTable">
 
-                <div class="card">
+              <tr>
+                <td
+                  colspan="6"
+                  class="loading">
+                  Đang tải học sinh...
+                </td>
+              </tr>
 
-                    <div class="card-header">
+            </tbody>
 
-                        <div>
-                            <div class="card-title">
-                                Cần chú ý
-                            </div>
+          </table>
 
-                            <div class="card-sub">
-                                Học sinh cần được động viên
-                            </div>
-                        </div>
+        </div>
 
-                        <button class="link-btn">
-                            Xem sổ điểm
-                        </button>
+      </section>
 
-                    </div>
 
-                    <div id="attentionList">
+      <!-- SCORES -->
 
-                        <div class="empty">
-                            Đang tải dữ liệu...
-                        </div>
+      <section
+        id="scoresPanel"
+        class="panel table-panel">
 
-                    </div>
+        <div class="panel-title-row">
 
-                </div>
+          <div class="panel-title">
+            📊 Điểm số
+          </div>
 
-            </section>
+        </div>
 
+        <div class="panel-subtitle">
+          Điểm trung bình được tính từ các cột TX có dữ liệu
+        </div>
 
-            <!-- HỌC SINH -->
+        <div class="table-wrap">
 
-            <section id="studentsCard"
-                     class="card data-card">
+          <table>
 
-                <div class="card-header">
+            <thead>
 
-                    <div>
+              <tr>
+                <th>STT</th>
+                <th>MÃ HS</th>
+                <th>HỌ VÀ TÊN</th>
+                <th>TX1</th>
+                <th>TX2</th>
+                <th>TX3</th>
+                <th>TX4</th>
+                <th>ĐIỂM TB</th>
+              </tr>
 
-                        <div class="card-title">
-                            🧑‍🎓 Học sinh
-                        </div>
+            </thead>
 
-                        <div class="card-sub">
-                            Danh sách học sinh của lớp đang chọn
-                        </div>
+            <tbody id="scoresTable">
 
-                    </div>
+              <tr>
+                <td
+                  colspan="8"
+                  class="loading">
+                  Đang tải điểm...
+                </td>
+              </tr>
 
-                    <div>
-                        <b id="studentCountText">0 học sinh</b>
-                    </div>
+            </tbody>
 
-                </div>
+          </table>
 
+        </div>
 
-                <div class="toolbar">
+      </section>
 
-                    <input
-                        id="studentSearch"
-                        class="search"
-                        type="text"
-                        placeholder="Nhập mã HS hoặc họ tên..."
-                        oninput="renderAll()"
-                    >
 
-                    <input
-                        id="attendanceDate"
-                        class="date-input"
-                        type="date"
-                    >
+      <!-- THI ĐUA -->
 
-                </div>
+      <section class="panel table-panel">
 
+        <div class="panel-title-row">
 
-                <div class="table-wrap">
+          <div class="panel-title">
+            🏆 Thi đua
+          </div>
 
-                    <table>
+        </div>
 
-                        <thead>
+        <div class="table-wrap">
 
-                            <tr>
-                                <th>STT</th>
-                                <th>MÃ HS</th>
-                                <th>HỌ VÀ TÊN</th>
-                                <th>NGÀY SINH</th>
-                                <th>GIỚI TÍNH</th>
-                                <th>GHI CHÚ</th>
-                            </tr>
+          <table>
 
-                        </thead>
+            <thead>
 
-                        <tbody id="studentsTable">
+              <tr>
+                <th>STT</th>
+                <th>MÃ HS</th>
+                <th>NGÀY</th>
+                <th>LỚP</th>
+                <th>NỘI DUNG</th>
+                <th>ĐIỂM</th>
+              </tr>
 
-                        </tbody>
+            </thead>
 
-                    </table>
+            <tbody id="competitionTable">
 
-                </div>
+              <tr>
+                <td
+                  colspan="6"
+                  class="loading">
+                  Đang tải thi đua...
+                </td>
+              </tr>
 
-            </section>
+            </tbody>
 
+          </table>
 
-            <!-- ĐIỂM -->
+        </div>
 
-            <section id="scoresCard"
-                     class="card data-card">
+      </section>
 
-                <div class="card-header">
 
-                    <div>
+      <!-- ĐIỂM DANH -->
 
-                        <div class="card-title">
-                            📊 Điểm số
-                        </div>
+      <section class="panel table-panel">
 
-                        <div class="card-sub">
-                            Điểm trung bình được tính từ các cột TX có dữ liệu
-                        </div>
+        <div class="panel-title-row">
 
-                    </div>
+          <div class="panel-title">
+            📅 Điểm danh
+          </div>
 
-                </div>
+        </div>
 
+        <div class="table-wrap">
 
-                <div class="table-wrap">
+          <table>
 
-                    <table>
+            <thead>
 
-                        <thead>
+              <tr>
+                <th>STT</th>
+                <th>MÃ HS</th>
+                <th>HỌ TÊN</th>
+                <th>TRẠNG THÁI</th>
+                <th>NGÀY</th>
+                <th>GHI CHÚ</th>
+              </tr>
 
-                            <tr>
-                                <th>STT</th>
-                                <th>MÃ HS</th>
-                                <th>HỌ VÀ TÊN</th>
-                                <th>TX1</th>
-                                <th>TX2</th>
-                                <th>TX3</th>
-                                <th>TX4</th>
-                                <th>ĐIỂM TB</th>
-                            </tr>
+            </thead>
 
-                        </thead>
+            <tbody id="attendanceTable">
 
-                        <tbody id="scoresTable">
+              <tr>
+                <td
+                  colspan="6"
+                  class="loading">
+                  Đang tải điểm danh...
+                </td>
+              </tr>
 
-                        </tbody>
+            </tbody>
 
-                    </table>
+          </table>
 
-                </div>
+        </div>
 
-            </section>
+      </section>
 
 
-            <!-- THI ĐUA -->
+      <div
+        id="errorBox"
+        class="error">
+      </div>
 
-            <section id="competitionCard"
-                     class="card data-card">
+    </section>
 
-                <div class="card-header">
-
-                    <div>
-
-                        <div class="card-title">
-                            🏆 Thi đua
-                        </div>
-
-                        <div class="card-sub">
-                            Điểm cộng / trừ của học sinh
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="table-wrap">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>STT</th>
-                                <th>MÃ HS</th>
-                                <th>NGÀY</th>
-                                <th>LOẠI</th>
-                                <th>NỘI DUNG</th>
-                                <th>ĐIỂM</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="competitionTable">
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </section>
-
-
-            <!-- ĐIỂM DANH -->
-
-            <section id="attendanceCard"
-                     class="card data-card">
-
-                <div class="card-header">
-
-                    <div>
-
-                        <div class="card-title">
-                            📅 Điểm danh
-                        </div>
-
-                        <div class="card-sub">
-                            Tình trạng điểm danh của lớp
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="table-wrap">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>STT</th>
-                                <th>MÃ HS</th>
-                                <th>HỌ TÊN</th>
-                                <th>TRẠNG THÁI</th>
-                                <th>NGÀY</th>
-                                <th>GHI CHÚ</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="attendanceTable">
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </section>
-
-        </section>
-
-    </main>
+  </main>
 
 </div>
 

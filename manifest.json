@@ -1,0 +1,23 @@
+{
+  "name": "Quản lý lớp học",
+  "short_name": "Quản lý lớp",
+  "description": "Ứng dụng quản lý lớp học",
+  "start_url": "/Quan-ly-lop/",
+  "scope": "/Quan-ly-lop/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#4564d9",
+  "icons": [
+    {
+      "src": "/Quan-ly-lop/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Quan-ly-lop/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

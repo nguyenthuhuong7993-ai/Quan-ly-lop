@@ -1,8 +1,12 @@
+```html
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>Quản lý lớp</title>
 
@@ -13,26 +17,68 @@
 
 <div class="app">
 
+    <!-- ==============================
+         TIÊU ĐỀ
+    =============================== -->
+
     <header class="header">
+
         <div>
+
             <h1>QUẢN LÝ LỚP</h1>
-            <p>Quản lý học sinh nhanh chóng</p>
+
+            <p>
+                Quản lý học sinh nhanh chóng
+            </p>
+
         </div>
+
     </header>
+
+
+    <!-- ==============================
+         THỐNG KÊ
+    =============================== -->
 
     <section class="dashboard">
 
         <div class="stat-card">
-            <span class="stat-number" id="classCount">0</span>
-            <span class="stat-label">Lớp</span>
+
+            <span
+                class="stat-number"
+                id="classCount">
+                0
+            </span>
+
+            <span
+                class="stat-label">
+                Lớp
+            </span>
+
         </div>
 
+
         <div class="stat-card">
-            <span class="stat-number" id="studentCount">0</span>
-            <span class="stat-label">Học sinh</span>
+
+            <span
+                class="stat-number"
+                id="studentCount">
+                0
+            </span>
+
+            <span
+                class="stat-label">
+                Học sinh
+            </span>
+
         </div>
 
     </section>
+
+
+    <!-- ==============================
+         CHỌN LỚP
+    =============================== -->
 
     <section class="section">
 
@@ -40,13 +86,21 @@
             Chọn lớp
         </label>
 
+
         <select id="classSelect">
+
             <option value="">
                 Đang tải danh sách lớp...
             </option>
+
         </select>
 
     </section>
+
+
+    <!-- ==============================
+         TÌM KIẾM
+    =============================== -->
 
     <section class="section">
 
@@ -54,34 +108,74 @@
             type="text"
             id="searchInput"
             placeholder="🔍 Tìm tên học sinh..."
+            autocomplete="off"
         >
 
     </section>
 
+
+    <!-- ==============================
+         DANH SÁCH HỌC SINH
+    =============================== -->
+
     <section class="section">
 
         <div class="section-title">
-            <h2>Danh sách học sinh</h2>
+
+            <h2>
+                Danh sách học sinh
+            </h2>
+
 
             <span id="selectedClass">
                 Chưa chọn lớp
             </span>
+
         </div>
 
-        <div id="loading" class="loading">
+
+        <!-- Trạng thái loading -->
+
+        <div
+            id="loading"
+            class="loading">
+
             Đang tải dữ liệu...
+
         </div>
 
-        <div id="studentList" class="student-list">
+
+        <!-- Danh sách học sinh -->
+
+        <div
+            id="studentList"
+            class="student-list">
+
         </div>
 
     </section>
 
-    <div id="message" class="message"></div>
+
+    <!-- ==============================
+         THÔNG BÁO
+    =============================== -->
+
+    <div
+        id="message"
+        class="message">
+
+    </div>
 
 </div>
+
+
+<!-- ==============================
+     JAVASCRIPT
+=============================== -->
 
 <script src="app.js"></script>
 
 </body>
+
 </html>
+```

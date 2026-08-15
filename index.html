@@ -2,7 +2,9 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>Trợ lý AI – Quản lý lớp học</title>
 
@@ -13,250 +15,370 @@
 
         body {
             margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f3f6fb;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+            background: #f1f5f9;
             color: #172033;
         }
 
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        /* =========================
+           HEADER
+        ========================= */
+
         .header {
-            background: linear-gradient(135deg, #4055d8, #3153e8);
+            background:
+                linear-gradient(
+                    135deg,
+                    #3949d8,
+                    #4f46e5
+                );
             color: white;
-            padding: 28px 35px;
+            padding: 28px 32px;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 30px;
-        }
-
-        .header p {
-            margin: 10px 0 0;
-            font-size: 18px;
-            font-weight: 500;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 25px;
-        }
-
-        .error-box {
-            display: none;
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            border-radius: 15px;
-            padding: 18px;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-
-        .control-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 5px 20px rgba(0,0,0,.07);
-            margin-bottom: 20px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto;
-            gap: 15px;
-            align-items: end;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 700;
+        .header-title {
+            font-size: 32px;
+            font-weight: 800;
             margin-bottom: 8px;
         }
 
-        select,
-        input {
+        .header-subtitle {
+            font-size: 18px;
+            opacity: .95;
+            line-height: 1.5;
+        }
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        .container {
+            width: min(1200px, 94%);
+            margin: 24px auto 50px;
+        }
+
+        /* =========================
+           CARD
+        ========================= */
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow:
+                0 5px 20px rgba(15, 23, 42, .08);
+        }
+
+        .card-title {
+            font-size: 21px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 700;
+        }
+
+        input,
+        select {
             width: 100%;
             height: 48px;
-            border: 1px solid #ccd4e0;
+            border: 1px solid #cbd5e1;
             border-radius: 12px;
-            padding: 0 15px;
-            font-size: 16px;
+            padding: 0 14px;
             background: white;
             outline: none;
         }
 
-        select:focus,
-        input:focus {
-            border-color: #4055d8;
-            box-shadow: 0 0 0 3px rgba(64,85,216,.12);
+        input:focus,
+        select:focus {
+            border-color: #4f46e5;
+            box-shadow:
+                0 0 0 3px
+                rgba(79, 70, 229, .12);
         }
 
-        button {
-            border: none;
+        .button-row {
+            display: flex;
+            align-items: end;
+        }
+
+        .btn {
+            border: 0;
             border-radius: 12px;
             height: 48px;
             padding: 0 22px;
-            background: #65758f;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
             cursor: pointer;
+            font-weight: 700;
         }
 
-        button:hover {
-            opacity: .9;
+        .btn-primary {
+            background: #64748b;
+            color: white;
         }
+
+        .btn-primary:hover {
+            background: #475569;
+        }
+
+        .btn-blue {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-green {
+            background: #16a34a;
+            color: white;
+        }
+
+        /* =========================
+           ALERT
+        ========================= */
+
+        .alert {
+            display: none;
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .alert.error {
+            display: block;
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .alert.success {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .alert.info {
+            display: block;
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        /* =========================
+           DASHBOARD
+        ========================= */
 
         .stats {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns:
+                repeat(5, 1fr);
+            gap: 16px;
         }
 
-        .stat-card {
+        .stat {
             background: white;
             border-radius: 18px;
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,.06);
+            box-shadow:
+                0 5px 20px rgba(15, 23, 42, .06);
         }
 
-        .stat-title {
-            color: #61708a;
+        .stat-label {
+            color: #64748b;
             font-size: 16px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
-        .stat-number {
-            font-size: 34px;
+        .stat-value {
+            font-size: 32px;
             font-weight: 800;
         }
 
-        .section {
-            background: white;
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,.06);
-        }
-
-        .section h2 {
-            font-size: 19px;
-            margin: 0 0 15px;
-        }
+        /* =========================
+           TABLE
+        ========================= */
 
         .table-wrapper {
-            width: 100%;
             overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 600px;
         }
 
         th {
-            background: #eef1ff;
-            color: #24388f;
-            padding: 11px;
+            background: #eef2ff;
+            color: #312e81;
             text-align: left;
+            padding: 13px 10px;
             font-size: 14px;
         }
 
         td {
-            padding: 10px;
-            border-bottom: 1px solid #e7ebf2;
+            padding: 13px 10px;
+            border-bottom: 1px solid #e2e8f0;
             font-size: 14px;
         }
 
         tr:hover td {
-            background: #f8faff;
+            background: #f8fafc;
         }
 
         .empty {
             text-align: center;
-            padding: 25px;
-            color: #78859a;
+            color: #64748b;
+            padding: 28px;
         }
+
+        /* =========================
+           BADGE
+        ========================= */
 
         .badge {
             display: inline-block;
             padding: 5px 10px;
-            border-radius: 20px;
+            border-radius: 999px;
             font-size: 12px;
             font-weight: 700;
         }
 
         .badge-present {
             background: #dcfce7;
-            color: #15803d;
+            color: #166534;
         }
 
         .badge-late {
             background: #fef3c7;
-            color: #b45309;
+            color: #92400e;
         }
 
         .badge-absent {
             background: #fee2e2;
-            color: #b91c1c;
+            color: #991b1b;
         }
 
         .badge-unknown {
-            background: #e5e7eb;
-            color: #4b5563;
+            background: #e2e8f0;
+            color: #475569;
         }
 
+        /* =========================
+           LOADING
+        ========================= */
+
         .loading {
-            color: #4055d8;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading.show {
+            display: flex;
+        }
+
+        .loading-box {
+            background: white;
+            padding: 28px 34px;
+            border-radius: 18px;
+            box-shadow:
+                0 15px 50px rgba(0,0,0,.15);
             font-weight: 700;
         }
 
-        .footer {
-            text-align: center;
-            color: #7b8798;
-            font-size: 13px;
-            padding: 20px;
+        /* =========================
+           CAMERA
+        ========================= */
+
+        .camera-area {
+            display: grid;
+            grid-template-columns:
+                1fr 1fr;
+            gap: 20px;
         }
+
+        video {
+            width: 100%;
+            background: #0f172a;
+            border-radius: 16px;
+            min-height: 300px;
+            object-fit: cover;
+        }
+
+        .camera-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
 
         @media (max-width: 900px) {
-            .form-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 600px) {
-            .header {
-                padding: 22px 18px;
-            }
-
-            .header h1 {
-                font-size: 23px;
-            }
-
-            .header p {
-                font-size: 15px;
-            }
-
-            .container {
-                padding: 15px;
-            }
 
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
             .stats {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
-            .stat-number {
-                font-size: 28px;
+            .camera-area {
+                grid-template-columns: 1fr;
+            }
+
+            .header-title {
+                font-size: 25px;
+            }
+        }
+
+        @media (max-width: 550px) {
+
+            .container {
+                width: 96%;
+            }
+
+            .header {
+                padding: 22px 18px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
             }
         }
     </style>
@@ -264,46 +386,100 @@
 
 <body>
 
+<!-- =========================
+     HEADER
+========================= -->
+
 <header class="header">
-    <h1>🤖 Trợ lý AI – Quản lý lớp học</h1>
-    <p>Quản lý học sinh • Điểm số • Thi đua • Điểm danh • Camera</p>
+
+    <div class="header-title">
+        🤖 Trợ lý AI – Quản lý lớp học
+    </div>
+
+    <div class="header-subtitle">
+        Quản lý học sinh • Điểm số • Thi đua •
+        Điểm danh • Camera
+    </div>
+
 </header>
+
 
 <main class="container">
 
-    <div id="errorBox" class="error-box"></div>
+    <!-- =========================
+         THÔNG BÁO
+    ========================= -->
 
-    <!-- BỘ ĐIỀU KHIỂN -->
-    <section class="control-card">
+    <div id="alert"
+         class="alert">
+    </div>
+
+
+    <!-- =========================
+         CHỌN LỚP
+    ========================= -->
+
+    <section class="card">
+
+        <div class="card-title">
+            Quản lý lớp học
+        </div>
 
         <div class="form-grid">
 
             <div class="form-group">
-                <label for="classSelect">Lớp</label>
+
+                <label for="classSelect">
+                    Lớp
+                </label>
+
                 <select id="classSelect">
-                    <option value="">Đang tải lớp...</option>
+                    <option value="">
+                        Đang tải lớp...
+                    </option>
                 </select>
+
             </div>
 
+
             <div class="form-group">
-                <label for="studentSearch">Tìm học sinh</label>
+
+                <label for="studentSearch">
+                    Tìm học sinh
+                </label>
+
                 <input
                     id="studentSearch"
                     type="text"
                     placeholder="Nhập mã HS hoặc họ tên..."
                 >
+
             </div>
 
+
             <div class="form-group">
-                <label for="attendanceDate">Ngày điểm danh</label>
+
+                <label for="attendanceDate">
+                    Ngày điểm danh
+                </label>
+
                 <input
                     id="attendanceDate"
                     type="date"
                 >
+
             </div>
 
-            <button id="reloadButton">
+        </div>
+
+        <div style="margin-top:18px">
+
+            <button
+                id="reloadBtn"
+                class="btn btn-primary">
+
                 🔄 Tải lại
+
             </button>
 
         </div>
@@ -311,89 +487,314 @@
     </section>
 
 
-    <!-- THỐNG KÊ -->
+    <!-- =========================
+         THỐNG KÊ
+    ========================= -->
+
     <section class="stats">
 
-        <div class="stat-card">
-            <div class="stat-title">Sĩ số</div>
-            <div id="totalStudents" class="stat-number">0</div>
+        <div class="stat">
+
+            <div class="stat-label">
+                Sĩ số
+            </div>
+
+            <div
+                id="totalCount"
+                class="stat-value">
+                0
+            </div>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-title">Có mặt</div>
-            <div id="presentCount" class="stat-number">0</div>
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Có mặt
+            </div>
+
+            <div
+                id="presentCount"
+                class="stat-value">
+                0
+            </div>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-title">Đi muộn</div>
-            <div id="lateCount" class="stat-number">0</div>
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Đi muộn
+            </div>
+
+            <div
+                id="lateCount"
+                class="stat-value">
+                0
+            </div>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-title">Vắng</div>
-            <div id="absentCount" class="stat-number">0</div>
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Vắng
+            </div>
+
+            <div
+                id="absentCount"
+                class="stat-value">
+                0
+            </div>
+
         </div>
 
-        <div class="stat-card">
-            <div class="stat-title">Cần xác nhận</div>
-            <div id="unknownCount" class="stat-number">0</div>
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Chưa xác định
+            </div>
+
+            <div
+                id="unknownCount"
+                class="stat-value">
+                0
+            </div>
+
         </div>
 
     </section>
 
 
-    <!-- DANH SÁCH HỌC SINH -->
-    <section class="section">
+    <!-- =========================
+         HỌC SINH
+    ========================= -->
 
-        <h2>👨‍🎓 Danh sách học sinh</h2>
+    <section class="card">
 
-        <div id="studentTable" class="table-wrapper">
-            <div class="empty">Đang tải dữ liệu...</div>
+        <div class="card-title">
+            👨‍🎓 Danh sách học sinh
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã HS</th>
+                        <th>Họ và tên</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
+                        <th>Ghi chú</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="studentTableBody">
+
+                </tbody>
+
+            </table>
+
         </div>
 
     </section>
 
 
-    <!-- ĐIỂM SỐ -->
-    <section class="section">
+    <!-- =========================
+         ĐIỂM SỐ
+    ========================= -->
 
-        <h2>📊 Điểm số</h2>
+    <section class="card">
 
-        <div id="scoreTable" class="table-wrapper">
-            <div class="empty">Đang tải dữ liệu...</div>
+        <div class="card-title">
+            📊 Điểm số
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã HS</th>
+                        <th>Họ và tên</th>
+                        <th>TX1</th>
+                        <th>TX2</th>
+                        <th>TX3</th>
+                        <th>TX4</th>
+                        <th>Điểm TB</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="scoreTableBody">
+
+                </tbody>
+
+            </table>
+
         </div>
 
     </section>
 
 
-    <!-- THI ĐUA -->
-    <section class="section">
+    <!-- =========================
+         THI ĐUA
+    ========================= -->
 
-        <h2>🏆 Thi đua</h2>
+    <section class="card">
 
-        <div id="competitionTable" class="table-wrapper">
-            <div class="empty">Đang tải dữ liệu...</div>
+        <div class="card-title">
+            🏆 Thi đua
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã HS</th>
+                        <th>Ngày</th>
+                        <th>Loại</th>
+                        <th>Nội dung</th>
+                        <th>Điểm</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="competitionTableBody">
+
+                </tbody>
+
+            </table>
+
         </div>
 
     </section>
 
 
-    <!-- ĐIỂM DANH -->
-    <section class="section">
+    <!-- =========================
+         ĐIỂM DANH
+    ========================= -->
 
-        <h2>📅 Điểm danh</h2>
+    <section class="card">
 
-        <div id="attendanceTable" class="table-wrapper">
-            <div class="empty">Đang tải dữ liệu...</div>
+        <div class="card-title">
+            📅 Điểm danh
+        </div>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã HS</th>
+                        <th>Họ tên</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày</th>
+                        <th>Ghi chú</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="attendanceTableBody">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         CAMERA
+    ========================= -->
+
+    <section class="card">
+
+        <div class="card-title">
+            📷 Camera điểm danh
+        </div>
+
+        <div class="camera-area">
+
+            <div>
+
+                <video
+                    id="camera"
+                    autoplay
+                    playsinline>
+                </video>
+
+            </div>
+
+            <div class="camera-info">
+
+                <div>
+                    Camera dùng để chuẩn bị cho
+                    chức năng điểm danh bằng hình ảnh.
+                </div>
+
+                <button
+                    id="startCameraBtn"
+                    class="btn btn-blue">
+
+                    📷 Bật camera
+
+                </button>
+
+                <button
+                    id="stopCameraBtn"
+                    class="btn btn-primary">
+
+                    ⛔ Tắt camera
+
+                </button>
+
+                <div id="cameraStatus">
+                    Camera chưa bật.
+                </div>
+
+            </div>
+
         </div>
 
     </section>
 
 </main>
 
-<footer class="footer">
-    Trợ lý AI – Quản lý lớp học
-</footer>
+
+<!-- =========================
+     LOADING
+========================= -->
+
+<div
+    id="loading"
+    class="loading">
+
+    <div class="loading-box">
+        ⏳ Đang tải dữ liệu...
+    </div>
+
+</div>
 
 
 <script src="app.js"></script>

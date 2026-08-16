@@ -2,7 +2,11 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="screen-orientation" content="landscape">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#5865d8">
 <meta name="description" content="Quản lý lớp học - Google Sheet">
 <link rel="manifest" href="./manifest.json">
@@ -194,6 +198,55 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
 .toast{position:fixed;right:25px;bottom:25px;z-index:110;background:#202a44;color:#fff;padding:15px 20px;border-radius:14px;box-shadow:var(--shadow);display:none;max-width:420px}
 .toast.show{display:block}
 
+/* ===== ĐIỆN THOẠI: ưu tiên xem ngang ===== */
+.rotate-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:linear-gradient(135deg,#f4f6fb,#ffffff);
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:28px;
+}
+.rotate-box{
+  width:min(430px,92vw);
+  background:#fff;
+  border-radius:28px;
+  padding:32px 24px;
+  box-shadow:0 20px 60px rgba(45,58,120,.16);
+  border:1px solid var(--line);
+}
+.rotate-icon{
+  font-size:58px;
+  line-height:1;
+  margin-bottom:18px;
+}
+.rotate-box h3{
+  font-size:25px;
+  margin-bottom:10px;
+}
+.rotate-box p{
+  color:var(--muted);
+  line-height:1.55;
+  margin-bottom:20px;
+}
+.rotate-btn{
+  border:0;
+  border-radius:16px;
+  padding:13px 20px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:800;
+}
+@media (max-width:900px) and (orientation:portrait){
+  .rotate-overlay{display:flex}
+}
+@media (max-width:900px) and (orientation:landscape){
+  .rotate-overlay{display:none}
+}
+
 @media(max-width:1050px){
   .sidebar{width:250px}.main{margin-left:250px;width:calc(100% - 250px)}
   .stats{grid-template-columns:repeat(2,1fr)}.topbar{padding:18px 25px}.content{padding:25px}
@@ -215,6 +268,14 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
 
 <body>
 <div class="loading" id="loading"><div class="loader-box"><span class="spinner"></span><span id="loadingText">Đang tải dữ liệu...</span></div></div>
+<div class="rotate-overlay" id="rotateOverlay">
+  <div class="rotate-box">
+    <div class="rotate-icon">📱↔️</div>
+    <h3>Hãy xoay điện thoại ngang</h3>
+    <p>Webapp được tối ưu để xem ở chế độ ngang, giúp hiển thị đầy đủ menu, bảng dữ liệu và sơ đồ lớp.</p>
+    <button class="rotate-btn" id="rotateBtn">↔ Xoay ngang</button>
+  </div>
+</div>
 
 <aside class="sidebar">
   <div class="brand">
@@ -1052,6 +1113,64 @@ $("studentDate").value=todayISO();
 $("attendanceDate").value=todayISO();
 setupClassroomBackground();
 loadAllData();
+
+/* Tự động ưu tiên chế độ ngang trên điện thoại.
+   Lưu ý: trình duyệt chỉ cho phép lock orientation trong một số ngữ cảnh
+   (thường là PWA đã cài hoặc fullscreen). Nếu bị chặn, lớp phủ sẽ yêu cầu
+   người dùng xoay máy thủ công. */
+(function(){
+  async function lockLandscape(){
+    try{
+      if(screen.orientation && screen.orientation.lock){
+        await screen.orientation.lock("landscape");
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  async function goLandscape(){
+    // Thử fullscreen trước vì một số trình duyệt chỉ cho lock orientation
+    // sau khi vào fullscreen/PWA.
+    try{
+      if(!document.fullscreenElement && document.documentElement.requestFullscreen){
+        await document.documentElement.requestFullscreen();
+      }
+    }catch(e){}
+    await lockLandscape();
+  }
+
+  function bindRotateButton(){
+    const btn = document.getElementById("rotateBtn");
+    if(btn){
+      btn.addEventListener("click", goLandscape);
+    }
+
+    // Thử khóa ngang khi webapp chạy trong chế độ PWA/standalone.
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+    if(standalone){
+      lockLandscape();
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", bindRotateButton, {once:true});
+  }else{
+    bindRotateButton();
+  }
+
+  // Khi người dùng xoay máy, tự cập nhật lớp phủ.
+  window.addEventListener("orientationchange", function(){
+    const overlay = document.getElementById("rotateOverlay");
+    if(!overlay) return;
+    overlay.style.display =
+      (window.innerWidth <= 900 && window.innerHeight > window.innerWidth)
+      ? "flex" : "none";
+  });
+})();
 </script>
 </body>
 </html>

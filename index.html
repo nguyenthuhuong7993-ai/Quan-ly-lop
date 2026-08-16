@@ -806,6 +806,10 @@ tr:hover td{
     color:#a16207;
 }
 
+
+/* ========================= SƠ ĐỒ LỚP ========================= */
+#classroomSection,#sheetSection{scroll-margin-top:100px}
+.classroom-wrap{background:linear-gradient(180deg,#fffdf7,#f4ead7);border:8px solid #fff;border-radius:28px;box-shadow:0 8px 25px rgba(75,55,25,.08);padding:18px;overflow:auto}.classroom-note{font-size:12px;color:#7b6d57;margin-bottom:14px}.class-board{background:#174d3a;color:#fff;border:9px solid #b98a52;border-radius:7px;max-width:650px;margin:0 auto 24px;text-align:center;padding:13px 20px;box-shadow:inset 0 0 0 2px #e2bf7d}.class-board h2{font-size:28px;letter-spacing:1px}.seat-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:26px;max-width:1080px;margin:auto;align-items:start}.seat-group{min-width:0}.seat-group-title{background:#f3c985;border:2px solid #c58e4a;border-radius:8px;padding:8px;text-align:center;font-weight:800;color:#62451f;margin-top:6px;margin-bottom:7px}.student-seat{width:100%;min-height:58px;border:2px solid #d59c55;border-radius:9px;background:linear-gradient(#fff6df,#efd09d);box-shadow:0 4px 7px rgba(90,55,20,.12);margin-bottom:7px;padding:6px;display:flex;align-items:center;gap:8px;text-align:left;transition:.15s}.student-seat:hover{transform:translateY(-2px);box-shadow:0 7px 14px rgba(90,55,20,.18)}.student-seat .seat-avatar{width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid #d9c49c;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}.student-seat .seat-name{display:block;font-size:12px;font-weight:800;color:#493b2a;line-height:1.15}.student-seat .seat-id{display:block;font-size:10px;color:#7b6750;margin-top:3px}.teacher-desk{margin:20px auto 0;width:max-content;max-width:100%;background:#e8bd79;border:2px solid #b77d3b;padding:9px 30px;border-radius:7px;font-weight:800;color:#5a3f20}.profile-modal{position:fixed;inset:0;background:rgba(18,28,50,.58);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:20px;z-index:150}.profile-modal.show{display:flex}.profile-card{width:min(560px,100%);background:#fff;border-radius:25px;padding:26px;box-shadow:0 25px 70px rgba(0,0,0,.25);position:relative}.profile-close{position:absolute;right:15px;top:12px;width:34px;height:34px;border:0;background:#f2f4f8;border-radius:50%;font-size:20px}.profile-head{display:flex;align-items:center;gap:16px;padding-right:35px}.profile-avatar{width:70px;height:70px;border-radius:20px;background:#edf4ff;display:flex;align-items:center;justify-content:center;font-size:35px}.profile-head h2{font-size:25px}.profile-role{color:#7b879f;margin-top:5px}.profile-tag{display:inline-block;background:#fff0df;color:#a7611e;padding:6px 10px;border-radius:99px;font-size:11px;font-weight:800;margin-bottom:7px}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.profile-box{background:#f8f8f5;border-radius:13px;padding:14px}.profile-box strong{display:block;font-size:11px;color:#7b8492;text-transform:uppercase;margin-bottom:7px}.profile-box p{font-size:13px;line-height:1.5}.profile-note{margin-top:12px;background:#fff3df;border-radius:13px;padding:14px}.profile-note strong{font-size:11px;text-transform:uppercase;color:#986128}.profile-note p{font-size:13px;margin-top:7px;line-height:1.5}.sheet-status-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.sheet-status-card{background:#f7f9fd;border:1px solid var(--border);border-radius:14px;padding:15px}.sheet-status-card b{font-size:12px}.sheet-status-card strong{display:block;font-size:24px;margin-top:6px;color:var(--blue)}.sheet-help{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.6}@media(max-width:1100px){.seat-grid{grid-template-columns:repeat(2,minmax(150px,1fr))}.sheet-status-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:800px){.profile-grid{grid-template-columns:1fr}.sheet-status-grid{grid-template-columns:1fr 1fr}.seat-grid{grid-template-columns:repeat(2,minmax(120px,1fr));gap:12px}}
 </style>
 </head>
 
@@ -835,6 +839,21 @@ tr:hover td{
             <button class="nav-item" data-section="students">
                 <span class="nav-icon">🧑‍🎓</span>
                 <span>Học sinh</span>
+            </button>
+
+            <button class="nav-item" data-section="classroom">
+                <span class="nav-icon">🏫</span>
+                <span>Sơ đồ lớp</span>
+            </button>
+
+            <button class="nav-item" data-section="attendance">
+                <span class="nav-icon">📅</span>
+                <span>Điểm danh</span>
+            </button>
+
+            <button class="nav-item" data-section="sheet">
+                <span class="nav-icon">📗</span>
+                <span>Google Sheet</span>
             </button>
 
             <button class="nav-item" data-section="scores">
@@ -1234,7 +1253,7 @@ tr:hover td{
 
 
             <!-- SCORES -->
-            <section class="panel data-panel">
+            <section class="panel data-panel" id="scoresSection">
 
                 <div class="panel-title">
 
@@ -1333,6 +1352,30 @@ tr:hover td{
             </section>
 
 
+            <!-- CLASSROOM -->
+            <section class="panel data-panel" id="classroomSection">
+                <div class="panel-title"><div><h3>🏫 Sơ đồ lớp học</h3><p>Bấm vào từng học sinh để xem thông tin hồ sơ.</p></div><span class="panel-link" id="classroomCount">0 học sinh</span></div>
+                <div class="classroom-wrap">
+                    <div class="classroom-note">🟠 Sơ đồ tự lấy học sinh của lớp đang chọn. Bấm vào từng học sinh để mở hồ sơ.</div>
+                    <div class="class-board"><h2 id="classBoardTitle">LỚP —</h2><div style="font-size:11px;margin-top:3px">BẢNG</div></div>
+                    <div class="seat-grid" id="seatGrid"></div>
+                    <div class="teacher-desk">BÀN GIÁO VIÊN</div>
+                </div>
+            </section>
+
+            <!-- GOOGLE SHEET -->
+            <section class="panel data-panel" id="sheetSection">
+                <div class="panel-title"><div><h3>📗 Google Sheet</h3><p>Trạng thái dữ liệu đang đọc trực tiếp từ Google Sheets.</p></div><span class="panel-link" id="sheetLastSync">—</span></div>
+                <div class="sheet-status-grid">
+                    <div class="sheet-status-card"><b>LOP</b><strong id="sheetCountLop">0</strong></div>
+                    <div class="sheet-status-card"><b>HOCSINH</b><strong id="sheetCountHs">0</strong></div>
+                    <div class="sheet-status-card"><b>DIEM</b><strong id="sheetCountDiem">0</strong></div>
+                    <div class="sheet-status-card"><b>THIDUA</b><strong id="sheetCountThiDua">0</strong></div>
+                    <div class="sheet-status-card"><b>DIEMDANH</b><strong id="sheetCountDiemDanh">0</strong></div>
+                </div>
+                <div class="sheet-help">Sửa Google Sheet xong, bấm nút ↻ phía trên để tải lại. Các sheet hiện tại vẫn giữ nguyên: LOP, HOCSINH, DIEM, THIDUA, DIEMDANH.</div>
+            </section>
+
             <!-- ATTENDANCE -->
             <section class="panel data-panel" id="attendanceSection">
 
@@ -1388,6 +1431,7 @@ tr:hover td{
 </div>
 
 
+<div class="profile-modal" id="profileModal"><div class="profile-card"><button class="profile-close" id="profileClose">×</button><div class="profile-head"><div class="profile-avatar" id="profileAvatar">🧑‍🎓</div><div><span class="profile-tag" id="profileTag">Học sinh</span><h2 id="profileName">—</h2><p class="profile-role" id="profileRole">—</p></div></div><div class="profile-grid"><div class="profile-box"><strong>Điểm mạnh</strong><p id="profileStrength">Chưa cập nhật</p></div><div class="profile-box"><strong>Sở thích</strong><p id="profileInterest">Chưa cập nhật</p></div></div><div class="profile-note"><strong>Lưu ý dành cho giáo viên</strong><p id="profileNote">Chưa có lưu ý đặc biệt.</p></div></div></div>
 <!-- LOADING -->
 <div
     class="loading"
@@ -2094,6 +2138,9 @@ function renderAll(){
     renderAttendance();
 
     calculateStatistics();
+
+    renderClassroom();
+    updateSheetStatus();
 }
 
 
@@ -3181,6 +3228,42 @@ function escapeHtml(value){
 }
 
 
+
+/* ==========================================================
+   SƠ ĐỒ LỚP + GOOGLE SHEET
+========================================================== */
+function renderClassroom(){
+    const grid=$("seatGrid"); if(!grid)return;
+    const students=getStudents();
+    $("classroomCount").textContent=students.length+" học sinh";
+    $("classBoardTitle").textContent=("LỚP "+(getClassName(currentClass)||currentClass||"—")).toUpperCase();
+    if(!students.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:#7b6d57">Chưa có học sinh cho lớp này.</div>';return;}
+    const groups=[[],[],[],[]]; students.forEach((s,i)=>groups[i%4].push(s));
+    grid.innerHTML=groups.map((g,gi)=>`<div class="seat-group"><div class="seat-group-title">TỔ ${gi+1}</div>${g.map(s=>{const id=getStudentId(s),gender=normalize(getValue(s,["GioiTinh","Giới tính","Gender"]));return `<button type="button" class="student-seat" data-student-id="${escapeHtml(id)}"><span class="seat-avatar">${gender.includes("nu")?"👧":"👦"}</span><span><span class="seat-name">${escapeHtml(getStudentName(s)||"Học sinh")}</span><span class="seat-id">${escapeHtml(id)}</span></span></button>`}).join("")}</div>`).join("");
+    grid.querySelectorAll(".student-seat").forEach(btn=>btn.addEventListener("click",()=>openStudentProfile(btn.dataset.studentId)));
+}
+function openStudentProfile(id){
+    const s=getStudents().find(r=>normalize(getStudentId(r))===normalize(id)); if(!s)return;
+    const gender=normalize(getValue(s,["GioiTinh","Giới tính","Gender"]));
+    $("profileAvatar").textContent=gender.includes("nu")?"👧":"👦";
+    $("profileTag").textContent=(currentClass||"Lớp")+" · "+(getStudentId(s)||"—");
+    $("profileName").textContent=getStudentName(s)||"Học sinh";
+    $("profileRole").textContent=getValue(s,["VaiTro","Vai trò","Role","ChucVu","Chức vụ"])||"Học sinh";
+    $("profileStrength").textContent=getValue(s,["DiemManh","Điểm mạnh","Diem manh","Strength"])||"Chưa cập nhật";
+    $("profileInterest").textContent=getValue(s,["SoThich","Sở thích","So thich","Interest","Hobby"])||"Chưa cập nhật";
+    $("profileNote").textContent=getValue(s,["LuuY","Lưu ý","Luu y","GhiChu","Ghi chú","Note"])||"Chưa có lưu ý đặc biệt.";
+    $("profileModal").classList.add("show");
+}
+function updateSheetStatus(){
+    if($("sheetCountLop"))$("sheetCountLop").textContent=DATA.lop.length;
+    if($("sheetCountHs"))$("sheetCountHs").textContent=DATA.hocsinh.length;
+    if($("sheetCountDiem"))$("sheetCountDiem").textContent=DATA.diem.length;
+    if($("sheetCountThiDua"))$("sheetCountThiDua").textContent=DATA.thidua.length;
+    if($("sheetCountDiemDanh"))$("sheetCountDiemDanh").textContent=DATA.diemdanh.length;
+    if($("sheetLastSync"))$("sheetLastSync").textContent="Đồng bộ "+new Date().toLocaleTimeString("vi-VN");
+}
+
+
 /* ==========================================================
    SỰ KIỆN
 ========================================================== */
@@ -3251,60 +3334,18 @@ $("openClassBtn")
 );
 
 
-document
-.querySelectorAll(".nav-item")
-.forEach(button => {
-
-    button.addEventListener(
-        "click",
-        function(){
-
-            document
-            .querySelectorAll(".nav-item")
-            .forEach(x =>
-                x.classList.remove("active")
-            );
-
-            this.classList.add("active");
-
-            const section =
-                this.dataset.section;
-
-            if(section === "students"){
-
-                $("studentSection")
-                    .scrollIntoView({
-                        behavior:"smooth"
-                    });
-            }
-
-            if(section === "scores"){
-
-                document
-                .querySelectorAll(".data-panel")[1]
-                ?.scrollIntoView({
-                    behavior:"smooth"
-                });
-            }
-
-            if(section === "statistics"){
-
-                document
-                .querySelector(".two-col")
-                ?.scrollIntoView({
-                    behavior:"smooth"
-                });
-            }
-
-            if(section === "overview"){
-
-                window.scrollTo({
-                    top:0,
-                    behavior:"smooth"
-                });
-            }
-        }
-    );
+document.querySelectorAll(".nav-item").forEach(button=>{
+    button.addEventListener("click",function(){
+        document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
+        this.classList.add("active");
+        const section=this.dataset.section;
+        const map={students:"studentSection",classroom:"classroomSection",scores:"scoresSection",attendance:"attendanceSection",sheet:"sheetSection"};
+        const titles={students:"Học sinh",classroom:"Sơ đồ lớp",scores:"Trong tiết",statistics:"Thống kê",attendance:"Điểm danh",sheet:"Google Sheet",overview:"Tổng quan"};
+        document.querySelector(".page-title h1").textContent=titles[section]||"Quản lý lớp";
+        if(section==="overview"){window.scrollTo({top:0,behavior:"smooth"});return;}
+        if(section==="statistics"){$("statisticsSection")?.scrollIntoView({behavior:"smooth",block:"start"});return;}
+        const target=$(map[section]); if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+    });
 });
 
 
@@ -3318,6 +3359,10 @@ $("addStudentBtn")
         );
     }
 );
+
+
+$("profileClose").addEventListener("click",()=>$("profileModal").classList.remove("show"));
+$("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))$("profileModal").classList.remove("show")});
 
 
 /* ==========================================================

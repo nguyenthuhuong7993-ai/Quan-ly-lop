@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#5865d8">
 <meta name="description" content="Quản lý lớp học - Google Sheet">
+<link rel="manifest" href="./manifest.json">
 <title>Quản lý lớp</title>
 
 <style>
@@ -287,10 +288,10 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
     <section class="page" id="page-classroom">
       <div class="card map-card">
         <div class="card-head">
-          <div><h3>🏫 Sơ đồ lớp học</h3><p>Bấm vào từng học sinh để xem hồ sơ. Dữ liệu lấy trực tiếp từ sheet HOCSINH.</p></div>
+          <div><h3>🏫 Sơ đồ lớp học</h3><p>Bấm vào từng học sinh để xem hồ sơ. Vị trí và thông tin sơ đồ lấy từ sheet SODOLop.</p></div>
           <div class="count" id="mapCount">0 học sinh</div>
         </div>
-        <div class="map-note">💡 Vị trí được sắp theo hai cột <b>Tổ</b> và <b>Bàn</b> trong sheet HOCSINH.</div>
+        <div class="map-note">💡 Sơ đồ lớp sử dụng <b>SODOLop</b> riêng để tránh làm thay đổi cấu trúc sheet <b>HOCSINH</b>. Dữ liệu được ghép bằng <b>MaHS</b>.</div>
         <div class="classroom" id="classroom">
           <div class="board" id="boardTitle">LỚP</div>
           <div class="teacher-desk">BÀN GIÁO VIÊN</div>
@@ -368,6 +369,7 @@ const CONFIG = {
   SHEETS: {
     LOP: "LOP",
     HOCSINH: "HOCSINH",
+    SODOLop: "SODOLop",
     DIEM: "DIEM",
     THIDUA: "THIDUA",
     DIEMDANH: "DIEMDANH"
@@ -383,6 +385,7 @@ const CONFIG = {
 const DATA = {
   LOP: [],
   HOCSINH: [],
+  SODOLop: [],
   DIEM: [],
   THIDUA: [],
   DIEMDANH: []
@@ -411,7 +414,7 @@ function toast(msg){
 
 function norm(v){
   return String(v ?? "")
-    .normalize("NFD").replace(/[\\u0300-\\u036f]/g,"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .toLowerCase().trim();
 }
 
@@ -432,7 +435,7 @@ function formatDate(v){
   let s = String(v).trim();
 
   // Google Visualization thường trả Date(2026,7,17)
-  let m = s.match(/^Date\\((\\d+),(\\d+),(\\d+)(?:,(\\d+),(\\d+),(\\d+))?\\)$/);
+  let m = s.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
   if(m){
     const d = new Date(
       Number(m[1]), Number(m[2]), Number(m[3]),
@@ -442,13 +445,13 @@ function formatDate(v){
   }
 
   // ISO / yyyy-mm-dd
-  if(/^\\d{4}-\\d{2}-\\d{2}/.test(s)){
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){
     const d = new Date(s.substring(0,10)+"T00:00:00");
     if(!isNaN(d)) return d.toLocaleDateString("vi-VN");
   }
 
   // dd/mm/yyyy hoặc d/m/yyyy
-  const p = s.match(/^(\\d{1,2})[\\/\\-.](\\d{1,2})[\\/\\-.](\\d{4})$/);
+  const p = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
   if(p){
     return `${String(p[1]).padStart(2,"0")}/${String(p[2]).padStart(2,"0")}/${p[3]}`;
   }
@@ -461,12 +464,12 @@ function dateKey(v){
 
   let s = String(v).trim();
 
-  let m = s.match(/^Date\\((\\d+),(\\d+),(\\d+)/);
+  let m = s.match(/^Date\((\d+),(\d+),(\d+)/);
   if(m) return `${m[1]}-${String(Number(m[2])+1).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
 
-  if(/^\\d{4}-\\d{2}-\\d{2}/.test(s)) return s.substring(0,10);
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
 
-  let p = s.match(/^(\\d{1,2})[\\/\\-.](\\d{1,2})[\\/\\-.](\\d{4})$/);
+  let p = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
   if(p) return `${p[3]}-${String(p[2]).padStart(2,"0")}-${String(p[1]).padStart(2,"0")}`;
 
   // Nếu Google trả object Date
@@ -543,6 +546,7 @@ async function loadAllData(){
     const results = await Promise.all([
       fetchSheet(names.LOP),
       fetchSheet(names.HOCSINH),
+      fetchSheet(names.SODOLop),
       fetchSheet(names.DIEM),
       fetchSheet(names.THIDUA),
       fetchSheet(names.DIEMDANH)
@@ -550,16 +554,17 @@ async function loadAllData(){
 
     DATA.LOP = results[0];
     DATA.HOCSINH = results[1];
-    DATA.DIEM = results[2];
-    DATA.THIDUA = results[3];
-    DATA.DIEMDANH = results[4];
+    DATA.SODOLop = results[2];
+    DATA.DIEM = results[3];
+    DATA.THIDUA = results[4];
+    DATA.DIEMDANH = results[5];
 
     setConnection(true, `Đã đồng bộ • ${new Date().toLocaleTimeString("vi-VN")}`);
 
     buildClassList();
     renderAll();
 
-    toast(`Đã tải ${DATA.HOCSINH.length} học sinh và ${DATA.DIEMDANH.length} dòng điểm danh.`);
+    toast(`Đã tải ${DATA.HOCSINH.length} học sinh, ${DATA.SODOLop.length} dòng sơ đồ và ${DATA.DIEMDANH.length} dòng điểm danh.`);
   }catch(err){
     console.error(err);
     setConnection(false,"Không đọc được Google Sheet");
@@ -592,6 +597,27 @@ function studentName(s){ return clean(getField(s,["HoTen","Họ Tên","Họ và 
 function studentClass(s){ return clean(getField(s,["MaLop","Mã Lớp","Malop","Ma Lop"])); }
 function studentTeam(s){ return clean(getField(s,["To","Tổ"])); }
 function studentDesk(s){ return clean(getField(s,["Ban","Bàn"])); }
+
+// Ghép dữ liệu HOCSINH với SODOLop bằng MaHS.
+// HOCSINH giữ dữ liệu gốc, SODOLop chỉ phục vụ sơ đồ + hồ sơ mở từ sơ đồ.
+function seatingRowFor(code){
+  const wanted = clean(code);
+  if(!wanted) return null;
+  return DATA.SODOLop.find(r => clean(getField(r,["MaHS","Mã HS","MAHS"])) === wanted) || null;
+}
+
+function classroomStudent(s){
+  const seat = seatingRowFor(studentCode(s));
+  if(!seat) return s;
+  return Object.assign({}, s, {
+    To: getField(seat,["To","Tổ"]) || getField(s,["To","Tổ"]),
+    Ban: getField(seat,["Ban","Bàn"]) || getField(s,["Ban","Bàn"]),
+    Chucvu: getField(seat,["Chucvu","Chức vụ","Chuc_vu"]) || getField(s,["Chucvu","Chức vụ"]),
+    Diemmanh: getField(seat,["Diemmanh","Điểm mạnh"]) || getField(s,["Diemmanh","Điểm mạnh"]),
+    Sothich: getField(seat,["Sothich","Sở thích"]) || getField(s,["Sothich","Sở thích"]),
+    LuuY: getField(seat,["LuuY","Lưu Ý","Lưu ý"]) || getField(s,["LuuY","Lưu Ý","Lưu y","Ghichu","Ghi chú"])
+  });
+}
 
 /* =========================================================
    LỚP
@@ -720,7 +746,7 @@ function setupClassroomBackground(){
 }
 
 function renderClassroom(){
-  const students=studentsOfClass();
+  const students=studentsOfClass().map(classroomStudent);
   $("mapCount").textContent=`${students.length} học sinh`;
   $("boardTitle").textContent=`LỚP ${selectedClass || ""}`.trim();
 
@@ -756,7 +782,6 @@ function renderClassroom(){
     arr.forEach((s,index)=>{
       const btn=document.createElement("button");
       btn.className="seat";
-      const maxPerCol=Math.max(1,Math.ceil(arr.length/1));
       const top=16 + index*7.2;
       btn.style.left=`${groupX[team] - groupWidth/2}%`;
       btn.style.top=`${top}%`;
@@ -780,6 +805,7 @@ function renderClassroom(){
    HỒ SƠ HỌC SINH
    ========================================================= */
 function openStudentModal(s){
+  s = classroomStudent(s);
   const code=studentCode(s);
   const att=DATA.DIEMDANH.filter(r=>clean(getField(r,["MaHS","Mã HS"]))===code);
 
@@ -822,7 +848,7 @@ function openStudentModal(s){
    TRONG TIẾT
    ========================================================= */
 function renderLesson(){
-  const arr=studentsOfClass();
+  const arr=studentsOfClass().map(classroomStudent);
   const notes=arr.filter(s=>clean(getField(s,["LuuY","Lưu Ý","Luu y"])));
 
   $("lessonSummary").innerHTML=`
@@ -881,6 +907,7 @@ function renderSheetInfo(){
   const items=[
     ["LOP",DATA.LOP.length],
     ["HOCSINH",DATA.HOCSINH.length],
+    ["SODOLop",DATA.SODOLop.length],
     ["DIEM",DATA.DIEM.length],
     ["THIDUA",DATA.THIDUA.length],
     ["DIEMDANH",DATA.DIEMDANH.length]
@@ -893,6 +920,10 @@ function renderSheetInfo(){
     </div>
   `).join("") + `
     <div class="sheet-box">
+      <b>🏫 Sơ đồ lớp</b>
+      <p>Sheet <b>SODOLop</b> được đọc riêng cho sơ đồ lớp. Webapp ghép HOCSINH và SODOLop bằng MaHS nên bạn có thể giữ HOCSINH đơn giản, không cần thêm cột Tổ/Bàn vào HOCSINH.</p>
+    </div>
+    <div class="sheet-box">
       <b>🔗 Cách kết nối</b>
       <p>Webapp đọc Google Sheet bằng Google Visualization API, không sử dụng <span class="code-hint">google.script.run</span>. Vì vậy không còn lỗi <b>google is not defined</b> trên GitHub Pages.</p>
     </div>
@@ -904,7 +935,7 @@ function renderSheetInfo(){
 }
 
 function showSheetError(err){
-  DATA.LOP=[];DATA.HOCSINH=[];DATA.DIEM=[];DATA.THIDUA=[];DATA.DIEMDANH=[];
+  DATA.LOP=[];DATA.HOCSINH=[];DATA.SODOLop=[];DATA.DIEM=[];DATA.THIDUA=[];DATA.DIEMDANH=[];
   buildClassList();
   renderAll();
 

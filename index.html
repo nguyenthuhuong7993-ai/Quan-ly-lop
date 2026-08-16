@@ -1309,7 +1309,7 @@ tr:hover td{
 
 
             <!-- ATTENDANCE -->
-            <section class="panel data-panel">
+            <section class="panel data-panel" id="attendanceSection">
 
                 <div class="panel-title">
 
@@ -2495,226 +2495,80 @@ function renderCompetition(){
 function renderAttendance(){
 
     const tbody = $("attendanceBody");
+    if(!tbody) return;
 
-    if(!tbody){
-        console.error("Không tìm thấy attendanceBody");
-        return;
-    }
+    const dateInput = $("attendanceDate");
+    const selectedDate = normalizeDate(dateInput ? dateInput.value : "");
+    const students = getStudents();
 
-    const date =
-        $("attendanceDate")?.value || "";
-
-    const students =
-        getStudents();
-
-    console.log("===== RENDER ĐIỂM DANH =====");
-    console.log("Lớp:", currentClass);
-    console.log("Ngày chọn:", date);
-    console.log("Tổng học sinh:", students.length);
-    console.log("Tổng dữ liệu điểm danh:", DATA.diemdanh.length);
-
-    /*
-       Nếu chưa có học sinh
-    */
     if(students.length === 0){
-
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" class="empty-row">
-                    Chưa có học sinh.
-                </td>
-            </tr>
-        `;
-
+                <td colspan="6" class="empty-row">Chưa có học sinh.</td>
+            </tr>`;
         return;
     }
 
-    /*
-       Lọc điểm danh theo lớp
-    */
-    let rows =
-        DATA.diemdanh.filter(row =>
-            belongsToClass(
-                row,
-                currentClass
-            )
-        );
+    // DIEMDANH có cấu trúc: ID | MaHS | MaLop | HoTen | Ngay | Trangthai | Ghichu
+    // Lọc theo cả lớp và ngày đã chọn.
+    const rows = DATA.diemdanh.filter(row => {
+        if(!belongsToClass(row, currentClass)) return false;
 
-    console.log(
-        "Điểm danh sau khi lọc lớp:",
-        rows
-    );
+        const rowDate = normalizeDate(getValue(row,[
+            "Ngay", "Ngày", "Date", "Ngay diem danh", "Ngày điểm danh"
+        ]));
 
-    /*
-       Lọc tiếp theo ngày được chọn
-    */
-    if(date){
-
-        const selectedDate =
-            normalizeDate(date);
-
-        console.log(
-            "Ngày chuẩn hóa:",
-            selectedDate
-        );
-
-        rows =
-            rows.filter(row => {
-
-                const rawDate =
-                    getValue(row,[
-                        "Ngay",
-                        "Ngày",
-                        "Date",
-                        "Ngay diem danh",
-                        "Ngày điểm danh"
-                    ]);
-
-                const rowDate =
-                    normalizeDate(rawDate);
-
-                console.log(
-                    "So sánh ngày:",
-                    rawDate,
-                    "=>",
-                    rowDate,
-                    "với",
-                    selectedDate
-                );
-
-                return rowDate === selectedDate;
-            });
-    }
-
-    console.log(
-        "Điểm danh sau khi lọc ngày:",
-        rows
-    );
-
-    /*
-       Tạo bảng tra cứu:
-       Mã HS -> dữ liệu điểm danh
-    */
-    const rowsByStudent = {};
-
-    rows.forEach(row => {
-
-        const id =
-            getStudentId(row);
-
-        if(id){
-
-            rowsByStudent[
-                normalize(id)
-            ] = row;
-        }
+        return !selectedDate || rowDate === selectedDate;
     });
 
-    /*
-       Hiển thị danh sách
-    */
-    tbody.innerHTML =
-        students.map(
-            (student,index) => {
+    // Nếu một học sinh có nhiều dòng cùng ngày, lấy dòng cuối cùng.
+    const rowsByStudent = {};
+    rows.forEach(row => {
+        const id = normalize(getStudentId(row));
+        if(id) rowsByStudent[id] = row;
+    });
 
-                const id =
-                    getStudentId(student);
+    tbody.innerHTML = students.map((student,index) => {
 
-                const name =
-                    getStudentName(student);
+        const id = getStudentId(student);
+        const name = getStudentName(student);
+        const record = rowsByStudent[normalize(id)];
 
-                const record =
-                    rowsByStudent[
-                        normalize(id)
-                    ];
+        const rawStatus = record
+            ? getValue(record,[
+                "Trangthai", "TrangThai", "Trạng thái", "Trang thai", "Status"
+              ])
+            : "";
 
-                const status =
-                    record
-                    ? getValue(
-                        record,
-                        [
-                            "TrangThai",
-                            "Trạng thái",
-                            "Trang thai",
-                            "Status"
-                        ]
-                    ) || "Chưa xác định"
-                    : "Chưa điểm danh";
+        const status = String(rawStatus || "Chưa điểm danh").trim();
 
-                const day =
-                    record
-                    ? getValue(
-                        record,
-                        [
-                            "Ngay",
-                            "Ngày",
-                            "Date",
-                            "Ngay diem danh",
-                            "Ngày điểm danh"
-                        ]
-                    )
-                    : date;
+        const rawDay = record
+            ? getValue(record,[
+                "Ngay", "Ngày", "Date", "Ngay diem danh", "Ngày điểm danh"
+              ])
+            : selectedDate;
 
-                const note =
-                    record
-                    ? getValue(
-                        record,
-                        [
-                            "GhiChu",
-                            "Ghi chú",
-                            "Ghi chu",
-                            "Note"
-                        ]
-                    ) || "—"
-                    : "—";
+        const note = record
+            ? getValue(record,[
+                "GhiChu", "Ghi chú", "Ghi chu", "Note"
+              ]) || "—"
+            : "—";
 
-                return `
-                    <tr>
-
-                        <td>
-                            ${index + 1}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                id || "—"
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                name || "—"
-                            )}
-                        </td>
-
-                        <td>
-                            ${
-                                record
-                                ? statusBadge(status)
-                                : `
-                                    <span class="badge badge-orange">
-                                        Chưa điểm danh
-                                    </span>
-                                  `
-                            }
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                formatDate(day)
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(note)}
-                        </td>
-
-                    </tr>
-                `;
-            }
-        ).join("");
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${escapeHtml(id || "—")}</strong></td>
+                <td>${escapeHtml(name || "—")}</td>
+                <td>
+                    ${record
+                        ? statusBadge(status)
+                        : `<span class="badge badge-orange">Chưa điểm danh</span>`}
+                </td>
+                <td>${escapeHtml(formatDate(rawDay))}</td>
+                <td>${escapeHtml(note)}</td>
+            </tr>`;
+    }).join("");
 }
-
 
 /* ==========================================================
    THỐNG KÊ
@@ -2995,109 +2849,42 @@ function formatDate(value){
 
 function normalizeDate(value){
 
-    if(
-        value === null ||
-        value === undefined
-    ){
+    if(value === null || value === undefined || value === ""){
         return "";
     }
 
-    let s =
-        String(value).trim();
+    const s = String(value).trim();
 
-    if(!s){
-        return "";
-    }
-
-    /*
-       GOOGLE GVIZ TRẢ VỀ DẠNG:
-
-       Date(2026,7,15)
-
-       Lưu ý:
-       tháng trong Date() của Google
-       bắt đầu từ 0.
-
-       7 = tháng 8
-    */
-    let match =
-        s.match(
-            /^Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})\s*\)$/i
-        );
+    // Google Visualization API thường trả ngày dưới dạng Date(2026,7,15).
+    // Lưu ý: tháng trong Date(...) bắt đầu từ 0.
+    let match = s.match(/^Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
 
     if(match){
-
-        const year =
-            match[1];
-
-        const month =
-            Number(match[2]) + 1;
-
-        const day =
-            Number(match[3]);
-
         return (
-            year +
-            "-" +
-            String(month).padStart(2,"0") +
-            "-" +
-            String(day).padStart(2,"0")
-        );
-    }
-
-    /*
-       YYYY-MM-DD
-    */
-    match =
-        s.match(
-            /^(\d{4})-(\d{1,2})-(\d{1,2})/
-        );
-
-    if(match){
-
-        return (
-            match[1] +
-            "-" +
-            String(match[2]).padStart(2,"0") +
-            "-" +
+            match[1] + "-" +
+            String(Number(match[2]) + 1).padStart(2,"0") + "-" +
             String(match[3]).padStart(2,"0")
         );
     }
 
-    /*
-       DD/MM/YYYY
-    */
-    match =
-        s.match(
-            /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
-        );
+    // ISO: 2026-08-15 hoặc 2026-08-15T...
+    match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
 
     if(match){
-
         return (
-            match[3] +
-            "-" +
-            String(match[2]).padStart(2,"0") +
-            "-" +
-            String(match[1]).padStart(2,"0")
+            match[1] + "-" +
+            String(match[2]).padStart(2,"0") + "-" +
+            String(match[3]).padStart(2,"0")
         );
     }
 
-    /*
-       DD-MM-YYYY
-    */
-    match =
-        s.match(
-            /^(\d{1,2})-(\d{1,2})-(\d{4})/
-        );
+    // Việt Nam: 15/08/2026
+    match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
 
     if(match){
-
         return (
-            match[3] +
-            "-" +
-            String(match[2]).padStart(2,"0") +
-            "-" +
+            match[3] + "-" +
+            String(match[2]).padStart(2,"0") + "-" +
             String(match[1]).padStart(2,"0")
         );
     }
@@ -3168,26 +2955,11 @@ $("attendanceBtn")
 .addEventListener(
     "click",
     function(){
-
         renderAttendance();
-
-        const attendanceBody =
-            $("attendanceBody");
-
-        if(attendanceBody){
-
-            const attendanceSection =
-                attendanceBody.closest(".data-panel");
-
-            if(attendanceSection){
-
-                attendanceSection.scrollIntoView({
-                    behavior:"smooth",
-                    block:"start"
-                });
-
-            }
-        }
+        $("attendanceSection")?.scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+        });
     }
 );
 

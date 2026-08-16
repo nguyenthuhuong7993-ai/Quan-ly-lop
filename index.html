@@ -781,6 +781,31 @@ tr:hover td{
         grid-template-columns:1fr;
     }
 }
+
+.attendance-status{
+    display:inline-block;
+    padding:7px 14px;
+    border-radius:999px;
+    font-weight:700;
+    white-space:nowrap;
+}
+.status-present{
+    background:#dff7e8;
+    color:#15803d;
+}
+.status-absent{
+    background:#fee2e2;
+    color:#b91c1c;
+}
+.status-late{
+    background:#fff0c2;
+    color:#a16207;
+}
+.status-missing{
+    background:#fff0c2;
+    color:#a16207;
+}
+
 </style>
 </head>
 
@@ -2492,82 +2517,313 @@ function renderCompetition(){
    RENDER ĐIỂM DANH
 ========================================================== */
 
-function renderAttendance(){
 
-    const tbody = $("attendanceBody");
-    if(!tbody) return;
+/* ==========================================================
+   KHỞI TẠO NGÀY ĐIỂM DANH
+========================================================== */
+function initAttendanceDate(){
+    const input = $("attendanceDate");
+    if(!input) return;
+
+    if(!input.value){
+        const now = new Date();
+
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth()+1).padStart(2,"0");
+        const dd = String(now.getDate()).padStart(2,"0");
+
+        input.value = `${yyyy}-${mm}-${dd}`;
+    }
+}
+
+function renderAttendance(){
+    const section = $("attendanceSection");
+    if(!section) return;
 
     const dateInput = $("attendanceDate");
-    const selectedDate = normalizeDate(dateInput ? dateInput.value : "");
+    const selectedDate = normalizeDate(
+        dateInput ? dateInput.value : ""
+    );
+
     const students = getStudents();
 
-    if(students.length === 0){
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="empty-row">Chưa có học sinh.</td>
-            </tr>`;
-        return;
-    }
+    /*
+      DIEMDANH trên Google Sheet:
+      ID | MaHS | MaLop | HoTen | Ngay | Trangthai | Ghichu
 
-    // DIEMDANH có cấu trúc: ID | MaHS | MaLop | HoTen | Ngay | Trangthai | Ghichu
-    // Lọc theo cả lớp và ngày đã chọn.
-    const rows = DATA.diemdanh.filter(row => {
-        if(!belongsToClass(row, currentClass)) return false;
+      Hàm này cố ý chuẩn hóa tất cả dữ liệu trước khi so sánh,
+      để xử lý được:
+      - 15/08/2026
+      - 15/8/2026
+      - 2026-08-15
+      - Date(2026,7,15)
+      - khoảng trắng thừa
+    */
 
-        const rowDate = normalizeDate(getValue(row,[
-            "Ngay", "Ngày", "Date", "Ngay diem danh", "Ngày điểm danh"
-        ]));
+    const normalizeText = value =>
+        String(value ?? "")
+            .trim()
+            .replace(/\s+/g," ")
+            .toLowerCase();
 
-        return !selectedDate || rowDate === selectedDate;
-    });
+    const normalizeStudentCode = value =>
+        String(value ?? "")
+            .trim()
+            .toUpperCase();
 
-    // Nếu một học sinh có nhiều dòng cùng ngày, lấy dòng cuối cùng.
-    const rowsByStudent = {};
+    const rows = Array.isArray(DATA.diemdanh)
+        ? DATA.diemdanh
+        : [];
+
+    console.log("===== RENDER DIEM DANH =====");
+    console.log("Ngày đang chọn:", selectedDate);
+    console.log("Lớp đang chọn:", currentClass);
+    console.log("Số dòng DIEMDANH:", rows.length);
+
+    const attendanceMap = new Map();
+
     rows.forEach(row => {
-        const id = normalize(getStudentId(row));
-        if(id) rowsByStudent[id] = row;
+
+        const maHS = normalizeStudentCode(
+            getValue(row,[
+                "MaHS",
+                "Mã HS",
+                "Ma hoc sinh",
+                "Mã học sinh",
+                "StudentID",
+                "StudentId"
+            ])
+        );
+
+        const maLop = normalizeText(
+            getValue(row,[
+                "MaLop",
+                "Mã lớp",
+                "Ma lop",
+                "Lop",
+                "Lớp",
+                "Class",
+                "ClassID"
+            ])
+        );
+
+        const ngay = normalizeDate(
+            getValue(row,[
+                "Ngay",
+                "Ngày",
+                "Date",
+                "date"
+            ])
+        );
+
+        const trangThai = String(
+            getValue(row,[
+                "Trangthai",
+                "Trạng thái",
+                "Trang thai",
+                "Status",
+                "status"
+            ]) ?? ""
+        ).trim();
+
+        const ghiChu = String(
+            getValue(row,[
+                "Ghichu",
+                "Ghi chú",
+                "Ghi chu",
+                "Note",
+                "note"
+            ]) ?? ""
+        ).trim();
+
+        if(!maHS || !ngay) return;
+
+        /*
+          Khóa chính ưu tiên:
+          Mã lớp + mã học sinh + ngày.
+          Nếu Sheet không có mã lớp thì vẫn cho phép
+          ghép bằng mã học sinh + ngày.
+        */
+        const keyWithClass =
+            maLop + "|" +
+            maHS + "|" +
+            ngay;
+
+        const keyWithoutClass =
+            maHS + "|" +
+            ngay;
+
+        const item = {
+            maHS,
+            maLop,
+            ngay,
+            trangThai,
+            ghiChu
+        };
+
+        attendanceMap.set(keyWithoutClass,item);
+
+        if(maLop){
+            attendanceMap.set(keyWithClass,item);
+        }
     });
 
-    tbody.innerHTML = students.map((student,index) => {
+    console.log(
+        "Số bản ghi DIEMDANH sau chuẩn hóa:",
+        attendanceMap.size
+    );
 
-        const id = getStudentId(student);
-        const name = getStudentName(student);
-        const record = rowsByStudent[normalize(id)];
+    let html = "";
 
-        const rawStatus = record
-            ? getValue(record,[
-                "Trangthai", "TrangThai", "Trạng thái", "Trang thai", "Status"
-              ])
-            : "";
+    students.forEach((student,index) => {
 
-        const status = String(rawStatus || "Chưa điểm danh").trim();
+        const maHS = normalizeStudentCode(
+            getValue(student,[
+                "MaHS",
+                "Mã HS",
+                "Ma hoc sinh",
+                "Mã học sinh",
+                "StudentID",
+                "StudentId"
+            ])
+        );
 
-        const rawDay = record
-            ? getValue(record,[
-                "Ngay", "Ngày", "Date", "Ngay diem danh", "Ngày điểm danh"
-              ])
-            : selectedDate;
+        const tenHS = String(
+            getValue(student,[
+                "HoTen",
+                "Họ tên",
+                "Ho va ten",
+                "Họ và tên",
+                "Name"
+            ]) ?? ""
+        ).trim();
 
-        const note = record
-            ? getValue(record,[
-                "GhiChu", "Ghi chú", "Ghi chu", "Note"
-              ]) || "—"
-            : "—";
+        /*
+          Tìm bản ghi theo lớp trước.
+          Nếu không tìm thấy thì tìm theo MaHS + ngày.
+        */
+        const classKey =
+            normalizeText(currentClass) +
+            "|" +
+            maHS +
+            "|" +
+            selectedDate;
 
-        return `
+        const simpleKey =
+            maHS +
+            "|" +
+            selectedDate;
+
+        let attendance =
+            attendanceMap.get(classKey) ||
+            attendanceMap.get(simpleKey);
+
+        /*
+          Trường hợp currentClass đang là tên lớp
+          còn DIEMDANH lưu mã lớp: tìm thêm bằng
+          getClassCode của học sinh.
+        */
+        if(!attendance){
+
+            const studentClass =
+                normalizeText(
+                    getClassCode(student)
+                );
+
+            const alternativeKey =
+                studentClass +
+                "|" +
+                maHS +
+                "|" +
+                selectedDate;
+
+            attendance =
+                attendanceMap.get(alternativeKey);
+        }
+
+        const status =
+            attendance &&
+            attendance.trangThai
+                ? attendance.trangThai
+                : "Chưa điểm danh";
+
+        const note =
+            attendance &&
+            attendance.ghiChu
+                ? attendance.ghiChu
+                : "—";
+
+        let statusClass = "status-missing";
+
+        const statusNormalized =
+            normalizeText(status);
+
+        if(
+            statusNormalized.includes("có mặt") ||
+            statusNormalized.includes("co mat") ||
+            statusNormalized === "present"
+        ){
+            statusClass = "status-present";
+        }
+        else if(
+            statusNormalized.includes("vắng") ||
+            statusNormalized.includes("vang") ||
+            statusNormalized === "absent"
+        ){
+            statusClass = "status-absent";
+        }
+        else if(
+            statusNormalized.includes("đi muộn") ||
+            statusNormalized.includes("di muon") ||
+            statusNormalized.includes("muộn") ||
+            statusNormalized.includes("muon") ||
+            statusNormalized === "late"
+        ){
+            statusClass = "status-late";
+        }
+
+        html += `
             <tr>
                 <td>${index + 1}</td>
-                <td><strong>${escapeHtml(id || "—")}</strong></td>
-                <td>${escapeHtml(name || "—")}</td>
+                <td><strong>${escapeHtml(maHS)}</strong></td>
+                <td>${escapeHtml(tenHS)}</td>
                 <td>
-                    ${record
-                        ? statusBadge(status)
-                        : `<span class="badge badge-orange">Chưa điểm danh</span>`}
+                    <span class="attendance-status ${statusClass}">
+                        ${escapeHtml(status)}
+                    </span>
                 </td>
-                <td>${escapeHtml(formatDate(rawDay))}</td>
+                <td>${escapeHtml(formatDateVN(selectedDate))}</td>
                 <td>${escapeHtml(note)}</td>
-            </tr>`;
-    }).join("");
+            </tr>
+        `;
+    });
+
+    const tbody =
+        section.querySelector("tbody");
+
+    if(tbody){
+        tbody.innerHTML =
+            html ||
+            `
+                <tr>
+                    <td colspan="6"
+                        style="text-align:center;padding:30px">
+                        Không có học sinh trong lớp.
+                    </td>
+                </tr>
+            `;
+    }
+
+    /*
+      Cập nhật tiêu đề/ngày nếu giao diện có các phần tử này.
+    */
+    const dateLabels =
+        section.querySelectorAll("[data-attendance-date]");
+
+    dateLabels.forEach(el => {
+        el.textContent =
+            formatDateVN(selectedDate);
+    });
 }
 
 /* ==========================================================
@@ -2847,6 +3103,23 @@ function formatDate(value){
 }
 
 
+function formatDateVN(value){
+    const d = normalizeDate(value);
+
+    if(!d) return "";
+
+    const match = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if(!match) return d;
+
+    return (
+        match[3] + "/" +
+        match[2] + "/" +
+        match[1]
+    );
+}
+
+
 function normalizeDate(value){
 
     if(value === null || value === undefined || value === ""){
@@ -2932,7 +3205,8 @@ $("refreshBtn")
     "click",
     async function(){
 
-        await loadAllData();
+        await initAttendanceDate();
+loadAllData();
     }
 );
 

@@ -2995,14 +2995,60 @@ function formatDate(value){
 
 function normalizeDate(value){
 
-    const s =
-        String(value ?? "").trim();
+    if(
+        value === null ||
+        value === undefined
+    ){
+        return "";
+    }
+
+    let s =
+        String(value).trim();
 
     if(!s){
         return "";
     }
 
+    /*
+       GOOGLE GVIZ TRẢ VỀ DẠNG:
+
+       Date(2026,7,15)
+
+       Lưu ý:
+       tháng trong Date() của Google
+       bắt đầu từ 0.
+
+       7 = tháng 8
+    */
     let match =
+        s.match(
+            /^Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})\s*\)$/i
+        );
+
+    if(match){
+
+        const year =
+            match[1];
+
+        const month =
+            Number(match[2]) + 1;
+
+        const day =
+            Number(match[3]);
+
+        return (
+            year +
+            "-" +
+            String(month).padStart(2,"0") +
+            "-" +
+            String(day).padStart(2,"0")
+        );
+    }
+
+    /*
+       YYYY-MM-DD
+    */
+    match =
         s.match(
             /^(\d{4})-(\d{1,2})-(\d{1,2})/
         );
@@ -3018,9 +3064,31 @@ function normalizeDate(value){
         );
     }
 
+    /*
+       DD/MM/YYYY
+    */
     match =
         s.match(
             /^(\d{1,2})\/(\d{1,2})\/(\d{4})/
+        );
+
+    if(match){
+
+        return (
+            match[3] +
+            "-" +
+            String(match[2]).padStart(2,"0") +
+            "-" +
+            String(match[1]).padStart(2,"0")
+        );
+    }
+
+    /*
+       DD-MM-YYYY
+    */
+    match =
+        s.match(
+            /^(\d{1,2})-(\d{1,2})-(\d{4})/
         );
 
     if(match){

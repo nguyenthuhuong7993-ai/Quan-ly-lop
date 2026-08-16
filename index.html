@@ -357,18 +357,26 @@ tr:hover td{background:#fafbff}
 "use strict";
 
 /* =========================================================
-   GOOGLE SHEETS
+   CẤU HÌNH GOOGLE SHEET
    ========================================================= */
 const SPREADSHEET_ID = "1H15_JVJ3jXKnzNxxhfk-T_0UlK0uo-aMslG5MeZo3EU";
+
 const SHEETS = {
-  lop:"LOP",
-  hocsinh:"HOCSINH",
-  diem:"DIEM",
-  thidua:"THIDUA",
-  diemdanh:"DIEMDANH"
+  lop: "LOP",
+  hocsinh: "HOCSINH",
+  diem: "DIEM",
+  thidua: "THIDUA",
+  diemdanh: "DIEMDANH"
 };
 
-let DATA = {lop:[],hocsinh:[],diem:[],thidua:[],diemdanh:[]};
+let DATA = {
+  lop: [],
+  hocsinh: [],
+  diem: [],
+  thidua: [],
+  diemdanh: []
+};
+
 let currentClass = "";
 let toastTimer = null;
 
@@ -377,234 +385,461 @@ const $ = id => document.getElementById(id);
 /* =========================================================
    TIỆN ÍCH
    ========================================================= */
-function normalize(v){
+function normalize(v) {
   return String(v ?? "")
-    .trim().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/đ/g,"d").replace(/\s+/g," ");
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/\s+/g, " ");
 }
-function normalizeHeader(v){
-  return normalize(v).replace(/[^a-z0-9]/g,"");
+
+function normalizeHeader(v) {
+  return normalize(v).replace(/[^a-z0-9]/g, "");
 }
-function escapeHtml(v){
+
+function escapeHtml(v) {
   return String(v ?? "")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
-function getValue(row,names){
-  if(!row) return "";
+
+function getValue(row, names) {
+  if (!row) return "";
   const wanted = names.map(normalizeHeader);
-  for(const key of Object.keys(row)){
-    if(wanted.includes(normalizeHeader(key))) return row[key];
+
+  for (const key of Object.keys(row)) {
+    if (wanted.includes(normalizeHeader(key))) {
+      return row[key];
+    }
   }
   return "";
 }
-function getClassCode(row){
-  return String(getValue(row,[
-    "Malop","Mã lớp","Ma lop","Lớp","Lop","Class","ClassID"
+
+function getStudentId(row) {
+  return String(getValue(row, [
+    "MaHS", "Mã HS", "Ma HS", "Mã học sinh",
+    "Ma hoc sinh", "StudentID", "ID"
   ])).trim();
 }
-function getClassName(code){
-  const row = DATA.lop.find(r => normalize(getClassCode(r))===normalize(code));
-  if(row){
-    return String(getValue(row,["TenLop","Tên lớp","Ten lop","Tên","ClassName"]) || code);
-  }
-  return code;
-}
-function getStudentId(row){
-  return String(getValue(row,[
-    "MaHS","Mã HS","Ma HS","Mã học sinh","Ma hoc sinh","ID","StudentID"
+
+function getStudentName(row) {
+  return String(getValue(row, [
+    "HoTen", "Họ tên", "Họ và tên",
+    "Ho ten", "Tên học sinh", "Name", "StudentName"
   ])).trim();
 }
-function getStudentName(row){
-  return String(getValue(row,[
-    "HoTen","Họ và tên","Ho ten","Họ tên","Tên học sinh","Name","StudentName"
+
+/* HOCSINH hiện tại:
+   A MaHS
+   B MaLop
+   C STT
+   D HoTen
+   E NgaySinh
+   F Gioitinh
+   G To
+   H Ban
+   I Chucvu
+   J Diemmanh
+   K Sothich
+   L LuuY
+*/
+function getClassCode(row) {
+  return String(getValue(row, [
+    "MaLop", "Mã lớp", "Ma lop", "Lớp", "Lop", "Class", "ClassID"
   ])).trim();
 }
-function belongsToClass(row,code){
-  if(!code) return true;
+
+function getTeam(row) {
+  const v = getValue(row, ["To", "Tổ", "Team", "Nhom", "Nhóm"]);
+  const n = parseInt(String(v).replace(/[^\d-]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getSeat(row) {
+  const v = getValue(row, ["Ban", "Bàn", "Seat", "ChoNgoi", "Chỗ ngồi"]);
+  const n = parseInt(String(v).replace(/[^\d-]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function belongsToClass(row, code) {
+  if (!code) return true;
   const c = getClassCode(row);
-  return !c || normalize(c)===normalize(code);
+
+  /* Nếu dòng không có MaLop thì không loại bỏ.
+     Điều này giúp DIEM/DIEMDANH cũ vẫn hoạt động. */
+  return !c || normalize(c) === normalize(code);
 }
-function getStudents(){
-  return DATA.hocsinh.filter(r=>belongsToClass(r,currentClass) && getStudentId(r));
+
+function getStudents() {
+  return DATA.hocsinh
+    .filter(r => belongsToClass(r, currentClass))
+    .filter(r => getStudentId(r))
+    .sort((a, b) => {
+      const sa = parseInt(getValue(a, ["STT", "Số thứ tự"]), 10);
+      const sb = parseInt(getValue(b, ["STT", "Số thứ tự"]), 10);
+      if (Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) return sa - sb;
+
+      const ta = getTeam(a);
+      const tb = getTeam(b);
+      if (ta !== tb) return ta - tb;
+
+      const ba = getSeat(a);
+      const bb = getSeat(b);
+      if (ba !== bb) return ba - bb;
+
+      return getStudentName(a).localeCompare(getStudentName(b), "vi");
+    });
 }
 
 /* =========================================================
-   NGÀY - xử lý Date(...) của Google GViz và dd/mm/yyyy
+   NGÀY
    ========================================================= */
-function toISODate(value){
-  if(value instanceof Date && !isNaN(value)){
-    return value.getFullYear()+"-"+String(value.getMonth()+1).padStart(2,"0")+"-"+String(value.getDate()).padStart(2,"0");
+function toISODate(value) {
+  if (value instanceof Date && !isNaN(value)) {
+    return value.getFullYear() + "-" +
+      String(value.getMonth() + 1).padStart(2, "0") + "-" +
+      String(value.getDate()).padStart(2, "0");
   }
+
   const s = String(value ?? "").trim();
-  if(!s) return "";
+  if (!s) return "";
 
+  /* Google GViz đôi khi trả Date(2026,7,16) */
   let m = s.match(/^Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
-  if(m) return `${m[1]}-${String(Number(m[2])+1).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
+  if (m) {
+    return `${m[1]}-${String(Number(m[2]) + 1).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
+  }
 
+  /* yyyy-mm-dd */
   m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-  if(m) return `${m[1]}-${String(m[2]).padStart(2,"0")}-${String(m[3]).padStart(2,"0")}`;
+  if (m) {
+    return `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
+  }
 
+  /* dd/mm/yyyy */
   m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-  if(m) return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+  if (m) {
+    return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
+  }
 
   const d = new Date(s);
-  if(!isNaN(d)) return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-  return s;
+  if (!isNaN(d)) {
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  return "";
 }
-function formatDate(v){
+
+function formatDate(v) {
   const iso = toISODate(v);
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : String(v ?? "—");
 }
-function todayISO(){
+
+function todayISO() {
   const d = new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  return d.getFullYear() + "-" +
+    String(d.getMonth() + 1).padStart(2, "0") + "-" +
+    String(d.getDate()).padStart(2, "0");
 }
-function setToday(){
+
+function latestAttendanceDate() {
+  const dates = DATA.diemdanh
+    .filter(r => belongsToClass(r, currentClass))
+    .map(r => toISODate(getValue(r, [
+      "Ngay", "Ngày", "Date",
+      "AttendanceDate", "NgayDiemDanh", "Ngày điểm danh"
+    ])))
+    .filter(Boolean)
+    .sort();
+
+  return dates.length ? dates[dates.length - 1] : todayISO();
+}
+
+function setToday() {
   const d = new Date();
-  const days = ["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
-  $("todayText").textContent = `${days[d.getDay()]}, ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  const days = [
+    "Chủ Nhật", "Thứ Hai", "Thứ Ba",
+    "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"
+  ];
+
+  $("todayText").textContent =
+    `${days[d.getDay()]}, ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+
   $("attendanceDate").value = todayISO();
   $("studentDate").value = todayISO();
 }
 
 /* =========================================================
-   GVIZ LOADER
-   Không dùng fetch JSON trực tiếp vì Google có thể trả prefix.
+   GOOGLE GVIZ
+   KHÔNG dùng google.visualization.
+   Không phụ thuộc thư viện Google JS.
    ========================================================= */
-function loadSheet(sheetName){
-  return new Promise((resolve,reject)=>{
-    const callback = "__gviz_cb_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-    const script = document.createElement("script");
-    const timeout = setTimeout(()=>{
-      cleanup();
-      reject(new Error("Không đọc được sheet "+sheetName+". Hãy kiểm tra quyền chia sẻ Google Sheet."));
-    },15000);
+function loadSheet(sheetName) {
+  return new Promise((resolve, reject) => {
+    const callback =
+      "__sheet_cb_" +
+      Date.now() + "_" +
+      Math.random().toString(36).slice(2);
 
-    function cleanup(){
+    const script = document.createElement("script");
+    let finished = false;
+
+    const timeout = setTimeout(() => {
+      finish();
+      reject(new Error(`Không đọc được sheet ${sheetName}`));
+    }, 15000);
+
+    function finish() {
+      if (finished) return;
+      finished = true;
       clearTimeout(timeout);
-      delete window[callback];
+      try { delete window[callback]; } catch (_) {}
       script.remove();
     }
 
-    window[callback] = function(json){
-      try{
-        cleanup();
-        if(!json || !json.table || !json.table.cols) throw new Error("Sheet "+sheetName+" không có dữ liệu.");
-        const headers = json.table.cols.map((c,i)=>c.label || c.id || ("Cột "+(i+1)));
-        const rows = (json.table.rows || []).map(r=>{
-          const obj = {};
-          headers.forEach((h,i)=>{
-            const cell = r.c && r.c[i];
-            let value = "";
-            if(cell){
-              if(cell.v !== undefined && cell.v !== null) value = cell.v;
-              else if(cell.f !== undefined && cell.f !== null) value = cell.f;
-            }
-            obj[h] = value;
-          });
-          return obj;
-        }).filter(r=>Object.values(r).some(v=>String(v ?? "").trim()!==""));
+    window[callback] = function(json) {
+      try {
+        if (!json || !json.table) {
+          throw new Error(`Sheet ${sheetName} không trả về dữ liệu.`);
+        }
+
+        const cols = json.table.cols || [];
+
+        const headers = cols.map((col, index) =>
+          String(col.label || col.id || `Cột ${index + 1}`).trim()
+        );
+
+        const rows = (json.table.rows || [])
+          .map(row => {
+            const obj = {};
+
+            headers.forEach((header, i) => {
+              const cell = row.c && row.c[i];
+
+              if (!cell) {
+                obj[header] = "";
+                return;
+              }
+
+              /* Ưu tiên f vì f là giá trị hiển thị.
+                 Ví dụ ngày sẽ là 15/08/2026 thay vì Date(...). */
+              if (cell.f !== undefined && cell.f !== null && cell.f !== "") {
+                obj[header] = cell.f;
+              } else if (cell.v !== undefined && cell.v !== null) {
+                obj[header] = cell.v;
+              } else {
+                obj[header] = "";
+              }
+            });
+
+            return obj;
+          })
+          .filter(row =>
+            Object.values(row).some(v => String(v ?? "").trim() !== "")
+          );
+
+        finish();
         resolve(rows);
-      }catch(err){ cleanup(); reject(err); }
+      } catch (err) {
+        finish();
+        reject(err);
+      }
     };
 
-    const url =
-      "https://docs.google.com/spreadsheets/d/"+encodeURIComponent(SPREADSHEET_ID)+
-      "/gviz/tq?sheet="+encodeURIComponent(sheetName)+
-      "&tqx=out:json;responseHandler="+encodeURIComponent(callback);
+    const base =
+      "https://docs.google.com/spreadsheets/d/" +
+      encodeURIComponent(SPREADSHEET_ID) +
+      "/gviz/tq";
 
-    script.src = url;
-    script.onerror = ()=>{cleanup();reject(new Error("Google Sheet không cho phép đọc sheet "+sheetName+"."));};
+    /* Quan trọng:
+       GViz dùng responseHandler:callback,
+       không phải responseHandler=callback. */
+    script.src =
+      base +
+      "?sheet=" + encodeURIComponent(sheetName) +
+      "&tqx=out%3Ajson%3BresponseHandler%3A" + encodeURIComponent(callback) +
+      "&_=" + Date.now();
+
+    script.onerror = () => {
+      finish();
+      reject(new Error(`Google Sheet không cho phép đọc sheet ${sheetName}.`));
+    };
+
     document.head.appendChild(script);
   });
 }
 
-async function loadAllData(){
-  showLoading("Đang đọc LOP, HOCSINH, DIEM, THIDUA và DIEMDANH...");
-  try{
-    const results = await Promise.all([
-      loadSheet(SHEETS.lop),
-      loadSheet(SHEETS.hocsinh),
-      loadSheet(SHEETS.diem),
-      loadSheet(SHEETS.thidua),
-      loadSheet(SHEETS.diemdanh)
-    ]);
+/* =========================================================
+   TẢI TẤT CẢ SHEET - KHÔNG để LOP lỗi làm mất HOCSINH
+   ========================================================= */
+async function loadAllData() {
+  showLoading("Đang đọc dữ liệu Google Sheet...");
 
-    DATA.lop = results[0];
-    DATA.hocsinh = results[1];
-    DATA.diem = results[2];
-    DATA.thidua = results[3];
-    DATA.diemdanh = results[4];
+  const entries = Object.entries(SHEETS);
 
-    buildClassList();
-    renderAll();
-    updateSheetCounts();
+  const results = await Promise.allSettled(
+    entries.map(([key, sheetName]) => loadSheet(sheetName))
+  );
 
+  const errors = [];
+
+  results.forEach((result, index) => {
+    const key = entries[index][0];
+    const sheetName = entries[index][1];
+
+    if (result.status === "fulfilled") {
+      DATA[key] = result.value;
+    } else {
+      DATA[key] = [];
+      errors.push(`${sheetName}: ${result.reason?.message || "không đọc được"}`);
+      console.error(`Lỗi sheet ${sheetName}:`, result.reason);
+    }
+  });
+
+  buildClassList();
+
+  /* Sau khi HOCSINH tải xong, chọn ngày điểm danh mới nhất
+     nếu ngày hôm nay chưa có dữ liệu. */
+  const latest = latestAttendanceDate();
+  if (!$("attendanceDate").value ||
+      !DATA.diemdanh.some(r =>
+        toISODate(getValue(r, ["Ngay", "Ngày", "Date"])) === $("attendanceDate").value
+      )) {
+    $("attendanceDate").value = latest;
+  }
+
+  renderAll();
+  updateSheetCounts();
+
+  const hsOk = DATA.hocsinh.length > 0;
+  const ddOk = DATA.diemdanh.length > 0;
+
+  if (hsOk) {
     $("syncDot").className = "sync-dot ok";
-    $("syncTitle").textContent = "Đã đồng bộ";
-    $("syncText").textContent = `${DATA.hocsinh.length} HS • ${DATA.diemdanh.length} dòng điểm danh`;
+    $("syncTitle").textContent = errors.length ? "Đã tải dữ liệu chính" : "Đã đồng bộ";
+    $("syncText").textContent =
+      `${DATA.hocsinh.length} HS • ${DATA.diemdanh.length} dòng điểm danh`;
+
     hideLoading();
-    toast("Đã tải đầy đủ dữ liệu Google Sheet.");
-  }catch(err){
-    console.error(err);
+
+    if (errors.length) {
+      toast(
+        "Đã tải HOCSINH và dữ liệu chính. Một số sheet không đọc được: " +
+        errors.join(" | "),
+        false
+      );
+    } else {
+      toast("Đã tải đầy đủ dữ liệu Google Sheet.");
+    }
+  } else {
     $("syncDot").className = "sync-dot err";
-    $("syncTitle").textContent = "Lỗi kết nối";
-    $("syncText").textContent = err.message;
+    $("syncTitle").textContent = "Không đọc được HOCSINH";
+    $("syncText").textContent = errors.join(" | ") || "Kiểm tra quyền chia sẻ Google Sheet";
     hideLoading();
-    toast(err.message,true);
+
+    toast(
+      "Không đọc được sheet HOCSINH. Hãy kiểm tra Google Sheet đã chia sẻ quyền xem.",
+      true
+    );
   }
 }
 
 /* =========================================================
    LỚP
-   Nếu LOP không có dữ liệu, tự lấy lớp từ HOCSINH/DIEMDANH.
+   ƯU TIÊN HOCSINH vì đây là sheet mới bạn vừa thay đổi.
    ========================================================= */
-function buildClassList(){
+function buildClassList() {
   const values = [];
-  const add = v => {
-    const s = String(v ?? "").trim();
-    if(s && !values.some(x=>normalize(x)===normalize(s))) values.push(s);
+
+  const add = value => {
+    const s = String(value ?? "").trim();
+    if (!s) return;
+
+    if (!values.some(x => normalize(x) === normalize(s))) {
+      values.push(s);
+    }
   };
 
-  DATA.lop.forEach(r=>add(getClassCode(r)));
-  if(values.length===0) DATA.hocsinh.forEach(r=>add(getClassCode(r)));
-  if(values.length===0) DATA.diemdanh.forEach(r=>add(getClassCode(r)));
+  /* 1. HOCSINH là nguồn chính */
+  DATA.hocsinh.forEach(row => add(getClassCode(row)));
+
+  /* 2. Nếu HOCSINH không có MaLop thì dùng LOP */
+  if (!values.length) {
+    DATA.lop.forEach(row => add(getClassCode(row)));
+  }
+
+  /* 3. Cuối cùng dùng DIEMDANH */
+  if (!values.length) {
+    DATA.diemdanh.forEach(row => add(getClassCode(row)));
+  }
+
+  values.sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
+  );
 
   const select = $("classSelect");
   select.innerHTML = "";
 
-  if(values.length===0){
-    select.innerHTML = '<option value="">Không tìm thấy lớp</option>';
+  if (!values.length) {
+    select.innerHTML = `<option value="">Không tìm thấy lớp</option>`;
     currentClass = "";
     return;
   }
 
-  values.forEach(c=>{
-    const o=document.createElement("option");
-    o.value=c;o.textContent=c;
-    select.appendChild(o);
+  values.forEach(code => {
+    const option = document.createElement("option");
+    option.value = code;
+
+    const className = getClassName(code);
+    option.textContent =
+      className && normalize(className) !== normalize(code)
+        ? `${code} - ${className}`
+        : code;
+
+    select.appendChild(option);
   });
 
-  const old = currentClass && values.find(v=>normalize(v)===normalize(currentClass));
+  const old = currentClass &&
+    values.find(v => normalize(v) === normalize(currentClass));
+
   currentClass = old || values[0];
-  select.value=currentClass;
+  select.value = currentClass;
 }
 
-function updateClassInfo(){
+function getClassName(code) {
+  const row = DATA.lop.find(r =>
+    normalize(getClassCode(r)) === normalize(code)
+  );
+
+  if (!row) return code;
+
+  return String(getValue(row, [
+    "TenLop", "Tên lớp", "Ten lop",
+    "Tên", "ClassName", "Ten"
+  ]) || code).trim();
+}
+
+function updateClassInfo() {
   const name = getClassName(currentClass) || "—";
-  $("statClass").textContent=name;
-  $("teacherClass").textContent=name;
-  $("mapTitle").textContent=`Sơ đồ lớp ${name} • Bấm vào từng học sinh để xem hồ sơ`;
+
+  $("statClass").textContent = name;
+  $("teacherClass").textContent = name;
+  $("mapTitle").textContent =
+    `Sơ đồ lớp ${name} • Bấm vào từng học sinh để xem hồ sơ`;
 }
 
 /* =========================================================
    RENDER TỔNG
    ========================================================= */
-function renderAll(){
+function renderAll() {
   updateClassInfo();
   renderStudents();
   renderScores();
@@ -616,320 +851,830 @@ function renderAll(){
 /* =========================================================
    HỌC SINH
    ========================================================= */
-function renderStudents(){
+function renderStudents() {
   const all = getStudents();
   const q = normalize($("studentSearch").value);
-  const rows = q ? all.filter(r=>normalize(getStudentId(r)).includes(q)||normalize(getStudentName(r)).includes(q)) : all;
+
+  const rows = q
+    ? all.filter(row =>
+        normalize(getStudentId(row)).includes(q) ||
+        normalize(getStudentName(row)).includes(q)
+      )
+    : all;
 
   $("studentCount").textContent = `${all.length} học sinh`;
   $("statTotal").textContent = all.length;
 
-  if(!rows.length){
-    $("studentsBody").innerHTML='<tr><td colspan="6" class="empty-row">Không tìm thấy học sinh.</td></tr>';
+  if (!rows.length) {
+    $("studentsBody").innerHTML =
+      `<tr><td colspan="6" class="empty-row">Không tìm thấy học sinh.</td></tr>`;
     return;
   }
 
-  $("studentsBody").innerHTML=rows.map((r,i)=>{
-    const dob=getValue(r,["NgaySinh","Ngày sinh","DOB","Birth"]);
-    const gender=getValue(r,["GioiTinh","Giới tính","Gender"]) || "—";
-    const note=getValue(r,["GhiChu","Ghi chú","Note"]) || "—";
-    return `<tr>
-      <td>${i+1}</td>
-      <td><strong>${escapeHtml(getStudentId(r))}</strong></td>
-      <td>${escapeHtml(getStudentName(r))}</td>
-      <td>${escapeHtml(formatDate(dob))}</td>
-      <td>${escapeHtml(gender)}</td>
-      <td>${escapeHtml(note)}</td>
-    </tr>`;
+  $("studentsBody").innerHTML = rows.map((row, index) => {
+    const dob = getValue(row, [
+      "NgaySinh", "Ngày sinh", "DOB", "Birth"
+    ]);
+
+    const gender = getValue(row, [
+      "Gioitinh", "GioiTinh", "Giới tính", "Gender"
+    ]) || "—";
+
+    const note = getValue(row, [
+      "LuuY", "Lưu ý", "GhiChu", "Ghi chú", "Note"
+    ]) || "—";
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(getStudentId(row))}</strong></td>
+        <td>${escapeHtml(getStudentName(row))}</td>
+        <td>${escapeHtml(formatDate(dob))}</td>
+        <td>${escapeHtml(gender)}</td>
+        <td>${escapeHtml(note)}</td>
+      </tr>
+    `;
   }).join("");
 }
 
 /* =========================================================
    SƠ ĐỒ LỚP
-   Ảnh nền: images/Sơ đồ lớp.jpg
-   Tự xếp học sinh thành 4 tổ; bấm tên mở hồ sơ.
+   DÙNG To + Ban mới trong HOCSINH
    ========================================================= */
-function renderClassMap(){
+function renderClassMap() {
   const students = getStudents();
-  $("mapCount").textContent=`${students.length} học sinh`;
-  $("studentCards").innerHTML="";
-  $("mapOverlay").innerHTML="";
-  $("mapStatus").style.display="none";
 
-  if(!students.length){
-    $("mapStatus").style.display="block";
-    $("mapStatus").textContent="Chưa có học sinh của lớp đang chọn. Hãy kiểm tra cột MaLop trong HOCSINH.";
+  $("mapCount").textContent = `${students.length} học sinh`;
+  $("studentCards").innerHTML = "";
+  $("mapOverlay").innerHTML = "";
+  $("mapStatus").style.display = "none";
+
+  if (!students.length) {
+    $("mapStatus").style.display = "block";
+    $("mapStatus").textContent =
+      "Chưa có học sinh của lớp này. Hãy kiểm tra cột MaLop trong HOCSINH.";
     return;
   }
 
-  /* Tọa độ theo ảnh 1174x724 người dùng đã tải lên:
-     4 cột bàn học sinh, mỗi cột là một tổ. */
-  const positions = [
-    {x:20,y:31},{x:20,y:39},{x:20,y:47},{x:20,y:55},{x:20,y:63},{x:20,y:71},{x:20,y:79},{x:20,y:87},
-    {x:40,y:31},{x:40,y:39},{x:40,y:47},{x:40,y:55},{x:40,y:63},{x:40,y:71},
-    {x:58,y:31},{x:58,y:39},{x:58,y:47},{x:58,y:55},{x:58,y:63},{x:58,y:71},
-    {x:78,y:31},{x:78,y:39},{x:78,y:47},{x:78,y:55},{x:78,y:63},{x:78,y:71},{x:78,y:79},{x:78,y:87}
-  ];
+  /* Vị trí 4 tổ trên ảnh:
+     Tổ 1 ≈ 20%
+     Tổ 2 ≈ 40%
+     Tổ 3 ≈ 59%
+     Tổ 4 ≈ 79%
 
-  students.forEach((student,i)=>{
-    const p=positions[i] || {
-      x:15 + ((i%4)*21),
-      y:32 + (Math.floor(i/4)*9)
-    };
-    const btn=document.createElement("button");
-    btn.className="student-seat";
-    btn.style.left=p.x+"%";
-    btn.style.top=p.y+"%";
-    const gender=normalize(getValue(student,["GioiTinh","Giới tính","Gender"]));
-    btn.innerHTML=`<span class="seat-icon">${gender==="nu"||gender==="nữ"?"👧":"👦"}</span>${escapeHtml(getStudentName(student))}`;
-    btn.addEventListener("click",()=>openStudentProfile(student));
-    $("mapOverlay").appendChild(btn);
+     Ban 1 → 31%
+     Ban 2 → 39%
+     Ban 3 → 47%
+     ...
+     Ban 8 → 87%
+  */
+  const xByTeam = {
+    1: 20,
+    2: 40,
+    3: 59,
+    4: 79
+  };
+
+  const yBySeat = {
+    1: 31,
+    2: 39,
+    3: 47,
+    4: 55,
+    5: 63,
+    6: 71,
+    7: 79,
+    8: 87
+  };
+
+  /* Nếu To/Ban bị trống, dùng vị trí dự phòng */
+  let fallbackIndex = 0;
+
+  students.forEach(student => {
+    const team = getTeam(student);
+    const seat = getSeat(student);
+
+    let x = xByTeam[team];
+    let y = yBySeat[seat];
+
+    if (!x || !y) {
+      const fallback = [
+        {x:20,y:31},{x:20,y:39},{x:20,y:47},{x:20,y:55},
+        {x:40,y:31},{x:40,y:39},{x:40,y:47},{x:40,y:55},
+        {x:59,y:31},{x:59,y:39},{x:59,y:47},{x:59,y:55},
+        {x:79,y:31},{x:79,y:39},{x:79,y:47},{x:79,y:55}
+      ][fallbackIndex % 16];
+
+      x = fallback.x;
+      y = fallback.y;
+      fallbackIndex++;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "student-seat";
+    button.style.left = `${x}%`;
+    button.style.top = `${y}%`;
+
+    const gender = normalize(getValue(student, [
+      "Gioitinh", "GioiTinh", "Giới tính", "Gender"
+    ]));
+
+    const icon =
+      gender === "nu" ? "👧" :
+      gender === "nam" ? "👦" :
+      "🧑‍🎓";
+
+    button.innerHTML =
+      `<span class="seat-icon">${icon}</span>` +
+      `${escapeHtml(getStudentName(student))}`;
+
+    button.title =
+      `${getStudentName(student)} • ${getStudentId(student)}` +
+      (team ? ` • Tổ ${team}` : "") +
+      (seat ? ` • Bàn ${seat}` : "");
+
+    button.addEventListener("click", () =>
+      openStudentProfile(student)
+    );
+
+    $("mapOverlay").appendChild(button);
   });
 
-  $("studentCards").innerHTML=students.map((s,i)=>`
-    <button class="student-card" data-student-index="${i}">
-      <strong>${escapeHtml(getStudentName(s))}</strong>
-      <small>${escapeHtml(getStudentId(s))}</small>
-    </button>`).join("");
+  $("studentCards").innerHTML = students.map((student, index) => `
+    <button type="button" class="student-card" data-student-index="${index}">
+      <strong>${escapeHtml(getStudentName(student))}</strong>
+      <small>
+        ${escapeHtml(getStudentId(student))}
+        ${getTeam(student) ? ` • Tổ ${getTeam(student)}` : ""}
+        ${getSeat(student) ? ` • Bàn ${getSeat(student)}` : ""}
+      </small>
+    </button>
+  `).join("");
 
-  $("studentCards").querySelectorAll(".student-card").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      const s=students[Number(btn.dataset.studentIndex)];
-      openStudentProfile(s);
+  $("studentCards")
+    .querySelectorAll(".student-card")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        const student =
+          students[Number(button.dataset.studentIndex)];
+
+        if (student) openStudentProfile(student);
+      });
     });
-  });
 }
 
 /* =========================================================
    HỒ SƠ HỌC SINH
+   DÙNG CÁC CỘT MỚI:
+   To, Ban, Chucvu, Diemmanh, Sothich, LuuY
    ========================================================= */
-function getStudentScoreRow(id){
-  return DATA.diem.find(r=>normalize(getStudentId(r))===normalize(id));
+function getStudentScoreRow(id) {
+  return DATA.diem.find(row =>
+    normalize(getStudentId(row)) === normalize(id)
+  );
 }
-function openStudentProfile(student){
-  const id=getStudentId(student);
-  const score=getStudentScoreRow(id);
-  const avg=score ? calculateAverage(score) : NaN;
-  const role=getValue(student,["VaiTro","Vai trò","ChucVu","Chức vụ","Role"]) || getValue(score||{},["VaiTro","Vai trò","Role"]) || "Học sinh";
-  const strength=getValue(student,["DiemManh","Điểm mạnh","Diem manh","Strength"]) || "Chưa cập nhật";
-  const hobby=getValue(student,["SoThich","Sở thích","So thich","Hobby"]) || "Chưa cập nhật";
-  const note=getValue(student,["LuuY","Lưu ý","GhiChu","Ghi chú","Note"]) || "Chưa cập nhật";
-  const dob=getValue(student,["NgaySinh","Ngày sinh","DOB","Birth"]) || "—";
-  const gender=getValue(student,["GioiTinh","Giới tính","Gender"]) || "—";
 
-  $("profileContent").innerHTML=`
+function openStudentProfile(student) {
+  const id = getStudentId(student);
+  const score = getStudentScoreRow(id);
+  const avg = score ? calculateAverage(score) : NaN;
+
+  const role =
+    getValue(student, ["Chucvu", "Chức vụ", "VaiTro", "Vai trò", "Role"]) ||
+    "Học sinh";
+
+  const strength =
+    getValue(student, ["Diemmanh", "DiemManh", "Điểm mạnh", "Strength"]) ||
+    "Chưa cập nhật";
+
+  const hobby =
+    getValue(student, ["Sothich", "SoThich", "Sở thích", "Hobby"]) ||
+    "Chưa cập nhật";
+
+  const note =
+    getValue(student, ["LuuY", "Lưu ý", "GhiChu", "Ghi chú", "Note"]) ||
+    "Chưa cập nhật";
+
+  const dob =
+    getValue(student, ["NgaySinh", "Ngày sinh", "DOB", "Birth"]) || "—";
+
+  const gender =
+    getValue(student, ["Gioitinh", "GioiTinh", "Giới tính", "Gender"]) || "—";
+
+  const team = getTeam(student);
+  const seat = getSeat(student);
+
+  const avatar =
+    normalize(gender) === "nu" ? "👧" :
+    normalize(gender) === "nam" ? "👦" :
+    "🧑‍🎓";
+
+  $("profileContent").innerHTML = `
     <div class="profile-top">
-      <div class="profile-avatar">${normalize(gender)==="nu"||normalize(gender)==="nữ"?"👧":"👦"}</div>
+      <div class="profile-avatar">${avatar}</div>
+
       <div>
-        <div style="color:#9a6c3c;font-size:11px;font-weight:900">MÃ HS: ${escapeHtml(id)}</div>
-        <div class="profile-name">${escapeHtml(getStudentName(student))}</div>
-        <div class="profile-role">${escapeHtml(role)}</div>
+        <div style="color:#9a6c3c;font-size:11px;font-weight:900">
+          ${escapeHtml(currentClass || "Lớp")} · ${escapeHtml(id)}
+        </div>
+
+        <div class="profile-name">
+          ${escapeHtml(getStudentName(student))}
+        </div>
+
+        <div class="profile-role">
+          ${escapeHtml(role)}
+        </div>
       </div>
     </div>
+
     <div class="profile-grid">
-      <div class="profile-box"><b>Ngày sinh</b><span>${escapeHtml(formatDate(dob))}</span></div>
-      <div class="profile-box"><b>Giới tính</b><span>${escapeHtml(gender)}</span></div>
-      <div class="profile-box"><b>Điểm trung bình</b><span>${Number.isFinite(avg)?avg.toFixed(1)+"/10":"Chưa có"}</span></div>
-      <div class="profile-box"><b>Lớp</b><span>${escapeHtml(getClassName(currentClass))}</span></div>
-      <div class="profile-box"><b>Điểm mạnh</b><span>${escapeHtml(strength)}</span></div>
-      <div class="profile-box"><b>Sở thích</b><span>${escapeHtml(hobby)}</span></div>
+      <div class="profile-box">
+        <b>Ngày sinh</b>
+        <span>${escapeHtml(formatDate(dob))}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Giới tính</b>
+        <span>${escapeHtml(gender)}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Tổ</b>
+        <span>${team ? "Tổ " + team : "Chưa cập nhật"}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Bàn</b>
+        <span>${seat ? "Bàn " + seat : "Chưa cập nhật"}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Điểm trung bình</b>
+        <span>${Number.isFinite(avg) ? avg.toFixed(1) + "/10" : "Chưa có"}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Lớp</b>
+        <span>${escapeHtml(getClassName(currentClass))}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Điểm mạnh</b>
+        <span>${escapeHtml(strength)}</span>
+      </div>
+
+      <div class="profile-box">
+        <b>Sở thích</b>
+        <span>${escapeHtml(hobby)}</span>
+      </div>
     </div>
-    <div class="profile-note"><b>LƯU Ý DÀNH CHO GIÁO VIÊN</b>${escapeHtml(note)}</div>`;
+
+    <div class="profile-note">
+      <b>LƯU Ý DÀNH CHO GIÁO VIÊN</b>
+      ${escapeHtml(note)}
+    </div>
+  `;
+
   $("profileModal").classList.add("show");
 }
-function closeProfile(){$("profileModal").classList.remove("show")}
+
+function closeProfile() {
+  $("profileModal").classList.remove("show");
+}
 
 /* =========================================================
    ĐIỂM
    ========================================================= */
-function getScore(row,n){
-  return getValue(row,[`TX${n}`,`TX ${n}`,`Điểm TX${n}`,`Diem TX${n}`,`DiemTX${n}`,`ĐiểmTX${n}`]);
+function getScore(row, n) {
+  return getValue(row, [
+    `TX${n}`,
+    `TX ${n}`,
+    `Điểm TX${n}`,
+    `Diem TX${n}`,
+    `DiemTX${n}`,
+    `ĐiểmTX${n}`
+  ]);
 }
-function toNumber(v){
-  if(v===null||v===undefined||String(v).trim()==="") return NaN;
-  const n=Number(String(v).replace(",","."));
-  return Number.isFinite(n)?n:NaN;
-}
-function calculateAverage(row){
-  const a=[];
-  for(let i=1;i<=4;i++){
-    const n=toNumber(getScore(row,i));
-    if(Number.isFinite(n)) a.push(n);
+
+function toNumber(value) {
+  if (value === null || value === undefined ||
+      String(value).trim() === "") {
+    return NaN;
   }
-  return a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
+
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n) ? n : NaN;
 }
-function renderScores(){
-  const students=getStudents();
-  if(!students.length){
-    $("scorePanelBody").innerHTML='<div class="notice-empty">Chưa có dữ liệu học sinh.</div>';
+
+function calculateAverage(row) {
+  const values = [];
+
+  for (let i = 1; i <= 4; i++) {
+    const n = toNumber(getScore(row, i));
+    if (Number.isFinite(n)) values.push(n);
+  }
+
+  return values.length
+    ? values.reduce((a, b) => a + b, 0) / values.length
+    : NaN;
+}
+
+function renderScores() {
+  const students = getStudents();
+
+  if (!students.length) {
+    $("scorePanelBody").innerHTML =
+      `<div class="notice-empty">Chưa có dữ liệu học sinh.</div>`;
     return;
   }
-  $("scorePanelBody").innerHTML=`<table>
-    <thead><tr><th>STT</th><th>MÃ HS</th><th>HỌ TÊN</th><th>TX1</th><th>TX2</th><th>TX3</th><th>TX4</th><th>TB</th></tr></thead>
-    <tbody>${students.map((s,i)=>{
-      const r=getStudentScoreRow(getStudentId(s));const avg=r?calculateAverage(r):NaN;
-      return `<tr><td>${i+1}</td><td><strong>${escapeHtml(getStudentId(s))}</strong></td><td>${escapeHtml(getStudentName(s))}</td>
-      ${[1,2,3,4].map(n=>`<td>${escapeHtml(getScore(r,n)||"—")}</td>`).join("")}
-      <td><strong>${Number.isFinite(avg)?avg.toFixed(1):"—"}</strong></td></tr>`;
-    }).join("")}</tbody></table>`;
+
+  $("scorePanelBody").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>MÃ HS</th>
+          <th>HỌ TÊN</th>
+          <th>TX1</th>
+          <th>TX2</th>
+          <th>TX3</th>
+          <th>TX4</th>
+          <th>TB</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        ${students.map((student, index) => {
+          const row =
+            getStudentScoreRow(getStudentId(student));
+
+          const avg =
+            row ? calculateAverage(row) : NaN;
+
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td><strong>${escapeHtml(getStudentId(student))}</strong></td>
+              <td>${escapeHtml(getStudentName(student))}</td>
+              ${[1,2,3,4].map(n => `
+                <td>${escapeHtml(getScore(row, n) || "—")}</td>
+              `).join("")}
+              <td>
+                <strong>
+                  ${Number.isFinite(avg) ? avg.toFixed(1) : "—"}
+                </strong>
+              </td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
 }
 
 /* =========================================================
    THỐNG KÊ
    ========================================================= */
-function renderStatistics(){
-  const students=getStudents();
-  const avgs=students.map(s=>calculateAverage(getStudentScoreRow(getStudentId(s)))).filter(Number.isFinite);
-  const avg=avgs.length?avgs.reduce((a,b)=>a+b,0)/avgs.length:NaN;
-  const good=avgs.length?avgs.filter(x=>x>=8).length/avgs.length*100:0;
+function renderStatistics() {
+  const students = getStudents();
 
-  $("statAverage").textContent=Number.isFinite(avg)?`${avg.toFixed(1)} /10`:"— /10";
-  $("statGood").textContent=Math.round(good)+"%";
+  const avgs = students
+    .map(s => calculateAverage(
+      getStudentScoreRow(getStudentId(s))
+    ))
+    .filter(Number.isFinite);
 
-  const buckets=[
-    ["≥ 8",avgs.filter(x=>x>=8).length],
-    ["6.5 – <8",avgs.filter(x=>x>=6.5&&x<8).length],
-    ["5 – <6.5",avgs.filter(x=>x>=5&&x<6.5).length],
-    ["< 5",avgs.filter(x=>x<5).length]
+  const avg = avgs.length
+    ? avgs.reduce((a, b) => a + b, 0) / avgs.length
+    : NaN;
+
+  const good = avgs.length
+    ? avgs.filter(x => x >= 8).length / avgs.length * 100
+    : 0;
+
+  $("statAverage").textContent =
+    Number.isFinite(avg) ? `${avg.toFixed(1)} /10` : "— /10";
+
+  $("statGood").textContent =
+    Math.round(good) + "%";
+
+  const buckets = [
+    ["≥ 8", avgs.filter(x => x >= 8).length],
+    ["6.5 – <8", avgs.filter(x => x >= 6.5 && x < 8).length],
+    ["5 – <6.5", avgs.filter(x => x >= 5 && x < 6.5).length],
+    ["< 5", avgs.filter(x => x < 5).length]
   ];
-  $("statisticsBody").innerHTML=buckets.map(([label,n])=>{
-    const pct=avgs.length?Math.round(n/avgs.length*100):0;
-    return `<div class="progress-row"><span>${label}</span><div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div><b>${pct}%</b></div>`;
-  }).join("") || '<div class="notice-empty">Chưa có dữ liệu điểm.</div>';
+
+  $("statisticsBody").innerHTML =
+    buckets.map(([label, count]) => {
+      const pct = avgs.length
+        ? Math.round(count / avgs.length * 100)
+        : 0;
+
+      return `
+        <div class="progress-row">
+          <span>${label}</span>
+          <div class="progress">
+            <div class="progress-bar" style="width:${pct}%"></div>
+          </div>
+          <b>${pct}%</b>
+        </div>
+      `;
+    }).join("");
 }
 
 /* =========================================================
-   ĐIỂM DANH - PHẦN QUAN TRỌNG
-   Luôn lọc theo:
-   1. lớp đang chọn
-   2. ngày đang chọn
-   3. mã HS
+   ĐIỂM DANH
+   CỰC KỲ QUAN TRỌNG:
+   - lọc đúng lớp
+   - lọc đúng ngày
+   - ghép bằng MaHS
+   - nếu DIEMDANH thiếu MaLop vẫn ghép được
    ========================================================= */
-function attendanceDateOf(row){
-  return toISODate(getValue(row,["Ngay","Ngày","Date","AttendanceDate","NgayDiemDanh","Ngày điểm danh"]));
+function attendanceDateOf(row) {
+  return toISODate(getValue(row, [
+    "Ngay",
+    "Ngày",
+    "Date",
+    "AttendanceDate",
+    "NgayDiemDanh",
+    "Ngày điểm danh"
+  ]));
 }
-function attendanceStatusOf(row){
-  return String(getValue(row,["Trangthai","Trạng thái","TrangThai","Status","TinhTrang","Tình trạng"]) || "").trim();
+
+function attendanceStatusOf(row) {
+  return String(getValue(row, [
+    "Trangthai",
+    "Trạng thái",
+    "TrangThai",
+    "Status",
+    "TinhTrang",
+    "Tình trạng"
+  ]) || "").trim();
 }
-function attendanceNoteOf(row){
-  return String(getValue(row,["Ghichu","Ghi chú","GhiChu","Note","Ghi chu"]) || "").trim();
+
+function attendanceNoteOf(row) {
+  return String(getValue(row, [
+    "Ghichu",
+    "Ghi chú",
+    "GhiChu",
+    "Note",
+    "Ghi chu"
+  ]) || "").trim();
 }
-function findAttendanceForStudent(id,date){
-  const rows=DATA.diemdanh.filter(r=>{
-    const rid=getStudentId(r);
-    return normalize(rid)===normalize(id) &&
-           attendanceDateOf(r)===date &&
-           belongsToClass(r,currentClass);
+
+function findAttendanceForStudent(id, date) {
+  const matches = DATA.diemdanh.filter(row => {
+    const rowId = getStudentId(row);
+    if (normalize(rowId) !== normalize(id)) return false;
+
+    if (attendanceDateOf(row) !== date) return false;
+
+    /* Nếu DIEMDANH có MaLop thì kiểm tra.
+       Nếu không có MaLop thì vẫn cho ghép bằng MaHS. */
+    const rowClass = getClassCode(row);
+
+    if (!rowClass) return true;
+
+    return normalize(rowClass) === normalize(currentClass);
   });
-  return rows.length ? rows[rows.length-1] : null;
+
+  return matches.length
+    ? matches[matches.length - 1]
+    : null;
 }
-function statusClass(status){
-  const n=normalize(status);
-  if(n.includes("vang")||n.includes("nghi")) return "badge-red";
-  if(n.includes("tre")||n.includes("di muon")) return "badge-orange";
-  if(n.includes("co mat")||n.includes("có mặt")||n.includes("present")) return "badge-green";
+
+function statusClass(status) {
+  const n = normalize(status);
+
+  if (
+    n.includes("vang") ||
+    n.includes("nghi")
+  ) {
+    return "badge-red";
+  }
+
+  if (
+    n.includes("tre") ||
+    n.includes("di muon")
+  ) {
+    return "badge-orange";
+  }
+
+  if (
+    n.includes("co mat") ||
+    n.includes("present")
+  ) {
+    return "badge-green";
+  }
+
   return "badge-gray";
 }
-function renderAttendance(){
-  const date=$("attendanceDate").value || todayISO();
-  const students=getStudents();
 
-  let coMat=0,vang=0,muon=0,chua=0;
-  const rows=students.map((s,i)=>{
-    const a=findAttendanceForStudent(getStudentId(s),date);
-    const status=a?attendanceStatusOf(a):"Chưa điểm danh";
-    const note=a?attendanceNoteOf(a):"—";
-    const n=normalize(status);
-    if(!a||!status){chua++}
-    else if(n.includes("vang")||n.includes("nghi")) vang++;
-    else if(n.includes("muon")||n.includes("tre")) muon++;
-    else if(n.includes("co mat")||n.includes("present")) coMat++;
-    else chua++;
-    return {s,status,note};
+function renderAttendance() {
+  const date =
+    $("attendanceDate").value || latestAttendanceDate();
+
+  const students = getStudents();
+
+  let coMat = 0;
+  let vang = 0;
+  let muon = 0;
+  let chua = 0;
+
+  const rows = students.map(student => {
+    const attendance =
+      findAttendanceForStudent(
+        getStudentId(student),
+        date
+      );
+
+    const status =
+      attendance
+        ? attendanceStatusOf(attendance)
+        : "Chưa điểm danh";
+
+    const note =
+      attendance
+        ? attendanceNoteOf(attendance)
+        : "—";
+
+    const n = normalize(status);
+
+    if (!attendance || !status) {
+      chua++;
+    } else if (
+      n.includes("vang") ||
+      n.includes("nghi")
+    ) {
+      vang++;
+    } else if (
+      n.includes("muon") ||
+      n.includes("tre")
+    ) {
+      muon++;
+    } else if (
+      n.includes("co mat") ||
+      n.includes("present")
+    ) {
+      coMat++;
+    } else {
+      chua++;
+    }
+
+    return {
+      student,
+      status,
+      note
+    };
   });
 
-  $("attendanceSummary").innerHTML=`
-    <span class="summary-pill">Ngày: ${escapeHtml(formatDate(date))}</span>
-    <span class="summary-pill green">Có mặt: ${coMat}</span>
-    <span class="summary-pill red">Vắng: ${vang}</span>
-    <span class="summary-pill yellow">Đi muộn: ${muon}</span>
-    <span class="summary-pill">Chưa điểm danh: ${chua}</span>`;
+  $("attendanceSummary").innerHTML = `
+    <span class="summary-pill">
+      Ngày: ${escapeHtml(formatDate(date))}
+    </span>
 
-  if(!rows.length){
-    $("attendanceBody").innerHTML='<tr><td colspan="6" class="empty-row">Không có học sinh của lớp này.</td></tr>';
+    <span class="summary-pill green">
+      Có mặt: ${coMat}
+    </span>
+
+    <span class="summary-pill red">
+      Vắng: ${vang}
+    </span>
+
+    <span class="summary-pill yellow">
+      Đi muộn: ${muon}
+    </span>
+
+    <span class="summary-pill">
+      Chưa điểm danh: ${chua}
+    </span>
+  `;
+
+  if (!rows.length) {
+    $("attendanceBody").innerHTML =
+      `<tr>
+        <td colspan="6" class="empty-row">
+          Không có học sinh của lớp này.
+        </td>
+      </tr>`;
     return;
   }
 
-  $("attendanceBody").innerHTML=rows.map((x,i)=>`
-    <tr>
-      <td>${i+1}</td>
-      <td><strong>${escapeHtml(getStudentId(x.s))}</strong></td>
-      <td>${escapeHtml(getStudentName(x.s))}</td>
-      <td><span class="badge ${statusClass(x.status)}">${escapeHtml(x.status)}</span></td>
-      <td>${escapeHtml(formatDate(date))}</td>
-      <td>${escapeHtml(x.note||"—")}</td>
-    </tr>`).join("");
+  $("attendanceBody").innerHTML =
+    rows.map((row, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>
+          <strong>${escapeHtml(getStudentId(row.student))}</strong>
+        </td>
+        <td>${escapeHtml(getStudentName(row.student))}</td>
+        <td>
+          <span class="badge ${statusClass(row.status)}">
+            ${escapeHtml(row.status)}
+          </span>
+        </td>
+        <td>${escapeHtml(formatDate(date))}</td>
+        <td>${escapeHtml(row.note || "—")}</td>
+      </tr>
+    `).join("");
 }
 
 /* =========================================================
    SHEET COUNTS
    ========================================================= */
-function updateSheetCounts(){
-  $("sheetLop").textContent=DATA.lop.length+" dòng";
-  $("sheetHs").textContent=DATA.hocsinh.length+" dòng";
-  $("sheetDiem").textContent=DATA.diem.length+" dòng";
-  $("sheetThiDua").textContent=DATA.thidua.length+" dòng";
-  $("sheetDiemDanh").textContent=DATA.diemdanh.length+" dòng";
+function updateSheetCounts() {
+  $("sheetLop").textContent =
+    DATA.lop.length + " dòng";
+
+  $("sheetHs").textContent =
+    DATA.hocsinh.length + " dòng";
+
+  $("sheetDiem").textContent =
+    DATA.diem.length + " dòng";
+
+  $("sheetThiDua").textContent =
+    DATA.thidua.length + " dòng";
+
+  $("sheetDiemDanh").textContent =
+    DATA.diemdanh.length + " dòng";
 }
 
 /* =========================================================
    UI
    ========================================================= */
-function showLoading(text){$("loadingText").textContent=text||"Vui lòng chờ";$("loading").classList.add("show")}
-function hideLoading(){$("loading").classList.remove("show")}
-function toast(message,error=false){
-  const el=$("toast");el.textContent=message;el.className="toast show"+(error?" error":"");
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className="toast",4500);
+function showLoading(text) {
+  $("loadingText").textContent =
+    text || "Vui lòng chờ";
+
+  $("loading").classList.add("show");
 }
-function scrollToSection(id){
-  const el=$(id);if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+
+function hideLoading() {
+  $("loading").classList.remove("show");
 }
-function setActive(target){
-  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.target===target));
-  const names={overview:"Tổng quan",students:"Học sinh",classmap:"Sơ đồ lớp",scores:"Trong tiết",statistics:"Thống kê",attendance:"Điểm danh",sheets:"Google Sheet"};
-  $("pageHeading").textContent=names[target]||"Quản lý lớp";
+
+function toast(message, error = false) {
+  const el = $("toast");
+
+  el.textContent = message;
+  el.className =
+    "toast show" + (error ? " error" : "");
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => {
+    el.className = "toast";
+  }, 5000);
+}
+
+function scrollToSection(id) {
+  const el = $(id);
+
+  if (el) {
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+}
+
+function setActive(target) {
+  document
+    .querySelectorAll(".nav-item")
+    .forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.target === target
+      );
+    });
+
+  const names = {
+    overview: "Tổng quan",
+    students: "Học sinh",
+    classmap: "Sơ đồ lớp",
+    scores: "Trong tiết",
+    statistics: "Thống kê",
+    attendance: "Điểm danh",
+    sheets: "Google Sheet"
+  };
+
+  $("pageHeading").textContent =
+    names[target] || "Quản lý lớp";
 }
 
 /* =========================================================
    SỰ KIỆN
    ========================================================= */
-document.querySelectorAll(".nav-item").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    setActive(btn.dataset.target);
-    scrollToSection(btn.dataset.target);
+document
+  .querySelectorAll(".nav-item")
+  .forEach(button => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.target;
+
+      setActive(target);
+
+      if (target === "overview") {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+      } else {
+        scrollToSection(target);
+      }
+    });
   });
-});
-$("classSelect").addEventListener("change",()=>{
-  currentClass=$("classSelect").value;
+
+$("classSelect").addEventListener("change", () => {
+  currentClass = $("classSelect").value;
+
   updateClassInfo();
   renderAll();
+
+  /* Khi đổi lớp:
+     nếu ngày đang chọn không có điểm danh,
+     tự chọn ngày mới nhất của lớp. */
+  const latest = latestAttendanceDate();
+
+  if (latest) {
+    $("attendanceDate").value = latest;
+    renderAttendance();
+  }
 });
-$("refreshBtn").addEventListener("click",loadAllData);
-$("studentsRefreshBtn").addEventListener("click",renderStudents);
-$("studentSearch").addEventListener("input",renderStudents);
-$("attendanceDate").addEventListener("change",renderAttendance);
-$("attendanceBtn").addEventListener("click",()=>{
-  renderAttendance();
-  setActive("attendance");
-  scrollToSection("attendance");
-});
-$("openClassBtn").addEventListener("click",()=>{
-  setActive("students");scrollToSection("students");
-});
-$("addStudentBtn").addEventListener("click",()=>toast("Nút thêm học sinh chưa ghi dữ liệu ngược về Google Sheet để tránh làm thay đổi dữ liệu gốc."));
-$("closeModal").addEventListener("click",closeProfile);
-$("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))closeProfile()});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeProfile()});
+
+$("refreshBtn").addEventListener(
+  "click",
+  loadAllData
+);
+
+$("studentsRefreshBtn").addEventListener(
+  "click",
+  renderStudents
+);
+
+$("studentSearch").addEventListener(
+  "input",
+  renderStudents
+);
+
+$("attendanceDate").addEventListener(
+  "change",
+  () => {
+    renderAttendance();
+  }
+);
+
+$("attendanceBtn").addEventListener(
+  "click",
+  () => {
+    renderAttendance();
+
+    setActive("attendance");
+
+    scrollToSection("attendance");
+  }
+);
+
+$("openClassBtn").addEventListener(
+  "click",
+  () => {
+    setActive("students");
+    scrollToSection("students");
+  }
+);
+
+$("addStudentBtn").addEventListener(
+  "click",
+  () => {
+    toast(
+      "Nút thêm học sinh hiện chỉ để giao diện. Chưa ghi dữ liệu ngược về Google Sheet."
+    );
+  }
+);
+
+$("closeModal").addEventListener(
+  "click",
+  closeProfile
+);
+
+$("profileModal").addEventListener(
+  "click",
+  event => {
+    if (event.target === $("profileModal")) {
+      closeProfile();
+    }
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  event => {
+    if (event.key === "Escape") {
+      closeProfile();
+    }
+  }
+);
 
 /* =========================================================
    KHỞI ĐỘNG
@@ -940,11 +1685,22 @@ loadAllData();
 /* =========================================================
    PWA
    ========================================================= */
-if("serviceWorker" in navigator){
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("service-worker.js")
-      .then(r=>console.log("PWA Service Worker:",r.scope))
-      .catch(err=>console.warn("Service Worker:",err));
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("service-worker.js")
+      .then(reg => {
+        console.log(
+          "PWA Service Worker:",
+          reg.scope
+        );
+      })
+      .catch(error => {
+        console.warn(
+          "Service Worker:",
+          error
+        );
+      });
   });
 }
 </script>

@@ -2494,34 +2494,37 @@ function renderCompetition(){
 
 function renderAttendance(){
 
-   const tbody =
-        $("attendanceBody");
+    const tbody = $("attendanceBody");
 
-    const date =
-        $("attendanceDate").value;
+    const selectedDate =
+        normalizeDate(
+            $("attendanceDate").value
+        );
 
     const students =
         getStudents();
 
     /*
-       Nếu chưa có học sinh
+       Không có học sinh
     */
     if(students.length === 0){
 
-        tbody.innerHTML =
-            `<tr>
+        tbody.innerHTML = `
+            <tr>
                 <td colspan="6" class="empty-row">
                     Chưa có học sinh.
                 </td>
-            </tr>`;
+            </tr>
+        `;
 
         return;
     }
 
     /*
-       Lấy dữ liệu điểm danh của lớp hiện tại
+       Lấy toàn bộ điểm danh
+       của lớp hiện tại
     */
-    let rows =
+    let attendanceRows =
         DATA.diemdanh.filter(
             row =>
                 belongsToClass(
@@ -2531,19 +2534,15 @@ function renderAttendance(){
         );
 
     /*
-       Nếu người dùng chọn ngày
-       thì CHỈ lấy dữ liệu của đúng ngày đó.
+       Lọc theo ngày
     */
-    if(date){
+    if(selectedDate){
 
-        const selectedDate =
-            normalizeDate(date);
-
-        rows =
-            rows.filter(row => {
+        attendanceRows =
+            attendanceRows.filter(row => {
 
                 const rawDate =
-                    getValue(row,[
+                    getValue(row, [
                         "Ngay",
                         "Ngày",
                         "Date",
@@ -2559,60 +2558,67 @@ function renderAttendance(){
     }
 
     /*
-       Lập bảng tra cứu:
-       Mã học sinh → dòng điểm danh
+       Tạo bảng:
+       Mã HS -> dữ liệu điểm danh
     */
-    const rowsByStudent = {};
+    const attendanceMap = {};
 
-    rows.forEach(row => {
+    attendanceRows.forEach(row => {
 
-        const id =
-            getStudentId(row);
+        const studentId =
+            normalize(
+                getStudentId(row)
+            );
 
-        if(id){
+        if(studentId){
 
-            rowsByStudent[
-                normalize(id)
-            ] = row;
+            attendanceMap[studentId] =
+                row;
 
         }
 
     });
 
     /*
-       Hiển thị toàn bộ học sinh.
-       Nếu ngày đó chưa có dữ liệu
-       thì hiển thị "Chưa điểm danh".
+       Hiển thị toàn bộ học sinh
     */
     tbody.innerHTML =
         students.map(
             (student,index) => {
 
-                const id =
+                const studentId =
                     getStudentId(student);
 
-                const name =
+                const studentName =
                     getStudentName(student);
 
-                const record =
-                    rowsByStudent[
-                        normalize(id)
-                    ];
+                const key =
+                    normalize(studentId);
 
+                const record =
+                    attendanceMap[key];
+
+                /*
+                   Trạng thái
+                */
                 const status =
                     record
                     ? getValue(
                         record,
                         [
+                            "Trangthai",
                             "TrangThai",
                             "Trạng thái",
                             "Trang thai",
                             "Status"
                         ]
-                    ) || "Chưa xác định"
-                    : "Chưa điểm danh";
+                    )
+                    : "";
 
-                const day =
+                /*
+                   Ngày
+                */
+                const recordDate =
                     record
                     ? getValue(
                         record,
@@ -2624,59 +2630,84 @@ function renderAttendance(){
                             "Ngày điểm danh"
                         ]
                     )
-                    : date;
+                    : selectedDate;
 
+                /*
+                   Ghi chú
+                */
                 const note =
                     record
                     ? getValue(
                         record,
                         [
+                            "Ghichu",
                             "GhiChu",
                             "Ghi chú",
                             "Ghi chu",
                             "Note"
                         ]
-                    ) || "—"
-                    : "—";
+                    )
+                    : "";
+
+                /*
+                   HTML trạng thái
+                */
+                let statusHtml;
+
+                if(record && status){
+
+                    statusHtml =
+                        statusBadge(status);
+
+                }else{
+
+                    statusHtml = `
+                        <span class="badge badge-orange">
+                            Chưa điểm danh
+                        </span>
+                    `;
+
+                }
 
                 return `
-                <tr>
+                    <tr>
 
-                    <td>
-                        ${index + 1}
-                    </td>
+                        <td>
+                            ${index + 1}
+                        </td>
 
-                    <td>
-                        ${escapeHtml(id || "—")}
-                    </td>
+                        <td>
+                            ${escapeHtml(
+                                studentId || "—"
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHtml(name || "—")}
-                    </td>
+                        <td>
+                            ${escapeHtml(
+                                studentName || "—"
+                            )}
+                        </td>
 
-                    <td>
-                        ${
-                            record
-                            ? statusBadge(status)
-                            : `<span class="badge badge-orange">
-                                Chưa điểm danh
-                              </span>`
-                        }
-                    </td>
+                        <td>
+                            ${statusHtml}
+                        </td>
 
-                    <td>
-                        ${escapeHtml(
-                            formatDate(day)
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHtml(
+                                formatDate(
+                                    recordDate
+                                )
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHtml(note)}
-                    </td>
+                        <td>
+                            ${escapeHtml(
+                                note || "—"
+                            )}
+                        </td>
 
-                </tr>
+                    </tr>
                 `;
-
             }
         ).join("");
 }

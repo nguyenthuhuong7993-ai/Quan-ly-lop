@@ -3167,7 +3167,28 @@ $("attendanceDate")
 $("attendanceBtn")
 .addEventListener(
     "click",
-    renderAttendance
+    function(){
+
+        renderAttendance();
+
+        const attendanceBody =
+            $("attendanceBody");
+
+        if(attendanceBody){
+
+            const attendanceSection =
+                attendanceBody.closest(".data-panel");
+
+            if(attendanceSection){
+
+                attendanceSection.scrollIntoView({
+                    behavior:"smooth",
+                    block:"start"
+                });
+
+            }
+        }
+    }
 );
 
 

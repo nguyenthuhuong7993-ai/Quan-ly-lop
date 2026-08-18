@@ -198,6 +198,60 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
 .toast{position:fixed;right:25px;bottom:25px;z-index:110;background:#202a44;color:#fff;padding:15px 20px;border-radius:14px;box-shadow:var(--shadow);display:none;max-width:420px}
 .toast.show{display:block}
 
+
+/* ===== TIN TỨC ===== */
+.news-item{
+  background:#f8f9fd;
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:24px;
+  margin-bottom:18px;
+}
+.news-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+.news-date{
+  color:var(--muted);
+  font-size:15px;
+  font-weight:700;
+}
+.news-new{
+  display:inline-block;
+  margin-left:10px;
+  padding:5px 10px;
+  border-radius:10px;
+  background:#ef6671;
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+}
+.news-target{
+  color:var(--primary);
+  font-size:14px;
+  font-weight:800;
+}
+.news-title{
+  font-size:23px;
+  color:var(--text);
+  margin:8px 0 12px;
+}
+.news-content{
+  color:#53617c;
+  line-height:1.7;
+  font-size:17px;
+  white-space:normal;
+}
+.news-empty{
+  text-align:center;
+  color:var(--muted);
+  padding:45px;
+}
+
 /* ===== ĐIỆN THOẠI: ưu tiên xem ngang ===== */
 .rotate-overlay{
   display:none;
@@ -285,6 +339,7 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
 
   <nav class="nav" id="nav">
     <button data-page="overview" class="active"><span class="ico">🏠</span>Tổng quan</button>
+    <button data-page="news"><span class="ico">🔔</span>Tin tức</button>
     <button data-page="students"><span class="ico">🧑‍🎓</span>Học sinh</button>
     <button data-page="classroom"><span class="ico">🏫</span>Sơ đồ lớp</button>
     <button data-page="lesson"><span class="ico">📝</span>Trong tiết</button>
@@ -329,6 +384,21 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
         <div class="stat"><div class="sicon">⭐</div><small>Điểm trung bình</small><strong id="statAvg">— /10</strong><small>Cùng lớp cố gắng thêm nhé</small></div>
         <div class="stat"><div class="sicon">🏆</div><small>Điểm tốt</small><strong id="statGood">0%</strong><small>Tỷ lệ điểm từ 8 trở lên</small></div>
         <div class="stat"><div class="sicon">📚</div><small>Cột điểm TX</small><strong id="statCols">4</strong><small>TX1, TX2, TX3, TX4</small></div>
+      </div>
+    </section>
+
+    <!-- TIN TỨC -->
+    <section class="page" id="page-news">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>🔔 Tin tức & Thông báo</h3>
+            <p>Thông báo mới nhất dành cho phụ huynh và học sinh</p>
+          </div>
+          <div class="count" id="newsCount">0 thông báo</div>
+        </div>
+
+        <div id="newsList"></div>
       </div>
     </section>
 
@@ -438,7 +508,8 @@ const CONFIG = {
     SODOLop: "SODOLop",
     DIEM: "DIEM",
     THIDUA: "THIDUA",
-    DIEMDANH: "DIEMDANH"
+    DIEMDANH: "DIEMDANH",
+    TINTUC: "TinTuc"
   },
 
   // Không sử dụng ảnh mẫu làm nền sơ đồ lớp.
@@ -455,7 +526,8 @@ const DATA = {
   SODOLop: [],
   DIEM: [],
   THIDUA: [],
-  DIEMDANH: []
+  DIEMDANH: [],
+  TINTUC: []
 };
 
 let selectedClass = "";
@@ -616,7 +688,8 @@ async function loadAllData(){
       fetchSheet(names.SODOLop),
       fetchSheet(names.DIEM),
       fetchSheet(names.THIDUA),
-      fetchSheet(names.DIEMDANH)
+      fetchSheet(names.DIEMDANH),
+      fetchSheet(names.TINTUC)
     ]);
 
     DATA.LOP = results[0];
@@ -625,6 +698,7 @@ async function loadAllData(){
     DATA.DIEM = results[3];
     DATA.THIDUA = results[4];
     DATA.DIEMDANH = results[5];
+    DATA.TINTUC = results[6];
 
     setConnection(true, `Đã đồng bộ • ${new Date().toLocaleTimeString("vi-VN")}`);
 
@@ -973,6 +1047,86 @@ function renderStats(){
 }
 
 /* =========================================================
+   TIN TỨC
+   ========================================================= */
+function newsTargetMatches(row){
+  const target = clean(getField(row,[
+    "DoiTuong","Đối tượng","Doi Tuong","DOI TUONG"
+  ]));
+  if(!target) return true;
+
+  const n = norm(target);
+  if(n === "tat ca" || n === "all" || n === "*") return true;
+
+  const targets = target.split(/[,;]+/).map(x=>clean(x)).filter(Boolean);
+  return targets.some(x=>norm(x) === norm(selectedClass));
+}
+
+function renderNews(){
+  const news = (DATA.TINTUC || []).filter(r=>{
+    const hienThi = clean(getField(r,[
+      "HienThi","Hiển thị","Hien Thi","HIEN THI"
+    ]));
+    const show = !hienThi ||
+      ["co","yes","true","1"].includes(norm(hienThi));
+
+    return show && newsTargetMatches(r);
+  });
+
+  news.sort((a,b)=>{
+    const da = dateKey(getField(a,["Ngay","Ngày","Date"]));
+    const db = dateKey(getField(b,["Ngay","Ngày","Date"]));
+    return db.localeCompare(da);
+  });
+
+  $("newsCount").textContent = `${news.length} thông báo`;
+
+  if(!news.length){
+    $("newsList").innerHTML = `
+      <div class="news-empty">
+        🔕 Chưa có thông báo dành cho lớp ${htmlEscape(selectedClass || "đang chọn")}.
+      </div>
+    `;
+    return;
+  }
+
+  $("newsList").innerHTML = news.map((r,index)=>{
+    const title = clean(getField(r,[
+      "TieuDe","Tiêu đề","Tieu De","TIEU DE"
+    ])) || "Thông báo";
+
+    const content = clean(getField(r,[
+      "NoiDung","Nội dung","Noi Dung","NOI DUNG"
+    ]));
+
+    const date = getField(r,["Ngay","Ngày","Date"]);
+    const target = clean(getField(r,[
+      "DoiTuong","Đối tượng","Doi Tuong","DOI TUONG"
+    ])) || "Tất cả";
+
+    const isNew = index === 0;
+
+    return `
+      <article class="news-item">
+        <div class="news-top">
+          <div>
+            <span class="news-date">📅 ${htmlEscape(formatDate(date))}</span>
+            ${isNew ? '<span class="news-new">MỚI</span>' : ''}
+          </div>
+          <span class="news-target">👥 ${htmlEscape(target)}</span>
+        </div>
+
+        <h3 class="news-title">${htmlEscape(title)}</h3>
+
+        <div class="news-content">
+          ${htmlEscape(content).replace(/\n/g,"<br>")}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+/* =========================================================
    GOOGLE SHEET STATUS
    ========================================================= */
 function renderSheetInfo(){
@@ -982,7 +1136,8 @@ function renderSheetInfo(){
     ["SODOLop",DATA.SODOLop.length],
     ["DIEM",DATA.DIEM.length],
     ["THIDUA",DATA.THIDUA.length],
-    ["DIEMDANH",DATA.DIEMDANH.length]
+    ["DIEMDANH",DATA.DIEMDANH.length],
+    ["TinTuc",DATA.TINTUC.length]
   ];
 
   $("sheetInfo").innerHTML=items.map(([name,count])=>`
@@ -1007,7 +1162,7 @@ function renderSheetInfo(){
 }
 
 function showSheetError(err){
-  DATA.LOP=[];DATA.HOCSINH=[];DATA.SODOLop=[];DATA.DIEM=[];DATA.THIDUA=[];DATA.DIEMDANH=[];
+  DATA.LOP=[];DATA.HOCSINH=[];DATA.SODOLop=[];DATA.DIEM=[];DATA.THIDUA=[];DATA.DIEMDANH=[];DATA.TINTUC=[];
   buildClassList();
   renderAll();
 
@@ -1024,7 +1179,7 @@ function showSheetError(err){
    HIỂN THỊ TRANG
    ========================================================= */
 const pageTitles={
-  overview:"Tổng quan",students:"Học sinh",classroom:"Sơ đồ lớp",
+  overview:"Tổng quan",news:"Tin tức & Thông báo",students:"Học sinh",classroom:"Sơ đồ lớp",
   lesson:"Trong tiết",stats:"Thống kê",attendance:"Điểm danh",sheet:"Google Sheet"
 };
 
@@ -1037,6 +1192,7 @@ function showPage(page){
   document.querySelector(`.nav button[data-page="${page}"]`)?.classList.add("active");
   $("pageTitle").textContent=pageTitles[page] || "Quản lý lớp";
 
+  if(page==="news") renderNews();
   if(page==="students") renderStudents();
   if(page==="classroom") renderClassroom();
   if(page==="lesson") renderLesson();

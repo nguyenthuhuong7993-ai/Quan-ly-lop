@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#5865d8">
 <meta name="description" content="Quản lý lớp học - Google Sheet">
 <link rel="manifest" href="./manifest.json">
-<title>Quản lý lớp</title>
+<title>Quản lý lớp 6C</title>
 
 <style>
 :root{
@@ -334,7 +334,7 @@ td{padding:18px 17px;border-bottom:1px solid var(--line);font-size:17px}
 <aside class="sidebar">
   <div class="brand">
     <div class="logo">QL</div>
-    <div><h1>Quản lý lớp</h1><p>Gọn gàng trong từng tiết</p></div>
+    <div><h1>Quản lý lớp 6C</h1><p>Gọn gàng trong từng tiết</p></div>
   </div>
 
   <nav class="nav" id="nav">
@@ -1188,7 +1188,7 @@ function showPage(page){
 
   $(`page-${page}`).classList.add("active");
   document.querySelector(`.nav button[data-page="${page}"]`)?.classList.add("active");
-  $("pageTitle").textContent=pageTitles[page] || "Quản lý lớp";
+  $("pageTitle").textContent=pageTitles[page] || "Quản lý lớp 6C";
 
   if(page==="news") renderNews();
   if(page==="students") renderStudents();
